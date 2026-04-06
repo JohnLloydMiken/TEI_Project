@@ -12,6 +12,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme{
+  --color-teiblue: #1a3a5c;
+  --color-teiorange: #e87722;
+}
+
 /* ❌ Remove this entire block - it overrides your page backgrounds */
 /* body {
   background: var(--background);

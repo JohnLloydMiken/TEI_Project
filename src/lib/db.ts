@@ -1,3 +1,4 @@
+import { error } from 'console';
 import sql from 'mssql';
 
 const config: sql.config = {

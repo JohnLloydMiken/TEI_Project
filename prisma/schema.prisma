@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+
+}
+
+// schema.prisma
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String   // hashed
+  role          String     @default("CSD")
+  createdAt     DateTime @default(now())
+}
+
+
+
+model UploadBatch {
+  id           Int        @id @default(autoincrement())
+  fileName     String
+  uploadedBy   Int
+  uploadedAt   DateTime   @default(now())
+  month        Int        // e.g. 4 for April
+  year         Int        // e.g. 2025
+  customers    Customer[]
+}
+
+model Customer {
+  id               Int          @id @default(autoincrement())
+  accountNo        String
+  customerName     String
+  address          String?
+  email            String?
+  phone            String?
+  depositAmount    Decimal
+  notificationDate DateTime     // drives the deadline
+  claimedAt        DateTime?    // null = not yet claimed
+  claimedBy        Int?         // User.id of the CSD who processed it
+  batchId          Int
+  batch            UploadBatch  @relation(fields: [batchId], references: [id])
+
+  @@unique([accountNo, batchId]) // same account can appear in different months
+}
