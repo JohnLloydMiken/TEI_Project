@@ -54,7 +54,7 @@ export default function LoginForm() {
       {/* Form body */}
       <form
         onSubmit={handleSubmit}
-        className="w-full px-6 py-10 flex flex-col gap-5 bg-white"
+        className="w-full px-6 py-10 flex flex-col gap-10 bg-white"
       >
         {/* Employee Name */}
         <div className="flex flex-col gap-1.5">
@@ -119,9 +119,9 @@ export default function LoginForm() {
             />
             {/* Show/hide toggle — wire up with useState if needed */}
             {isVisible ? (
-              <EyeClosedIcon onClick={() => setVisible(!isVisible)} />
+              <EyeClosedIcon onClick={() => setVisible(!isVisible)} color="gray"/>
             ) : (
-              <Eye onClick={() => setVisible(!isVisible)} />
+              <Eye onClick={() => setVisible(!isVisible)} color="gray" />
             )}
           </div>
         </div>
