@@ -3,8 +3,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-console.log("SECRET:", process.env.NEXTAUTH_SECRET);
-console.log("URL:", process.env.NEXTAUTH_URL);
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
