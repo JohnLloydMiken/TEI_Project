@@ -20,7 +20,7 @@ export default async function DashboardLayout({
       {/* ✅ sidebar and main content side by side */}
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar navItems={navItems} isAdmin={isAdmin} />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <main className="flex-1 overflow-y-auto bg-blue-50/70 p-6">
           {children}
         </main>
       </div>
