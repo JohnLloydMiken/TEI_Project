@@ -27,7 +27,7 @@ export default function useFetchQualifiedUsers(accountNo: string): FetchState {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const path = usePathname();
+ 
   useEffect(() => {
     if (!accountNo) return; // ✅ don't fetch if empty
 

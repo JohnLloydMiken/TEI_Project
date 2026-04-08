@@ -71,10 +71,10 @@ export default function DashboardSidebar({
       {/* Sign out */}
       <div className="p-4 border-t border-white/20">
         <p className="text-white/50 text-xs">
-          Signed in as {isAdmin ? "Admin" : "CSD"}
+          Sign out as {isAdmin ? "Admin" : "CSD"}
         </p>
 
-        <button>Sign Out</button>
+        <button>Signed in</button>
       </div>
     </aside>
   );

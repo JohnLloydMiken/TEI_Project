@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ accountNumber: string }> },
 ) {
-  const { accountNumber } = await params; // ✅ must await in Next.js 15
+  const { accountNumber } = await params;
   console.log("Received accountNumber:", accountNumber); // ← add this
 
   if (!accountNumber) {

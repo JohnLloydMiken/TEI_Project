@@ -8,12 +8,10 @@ export default async function UserDashboard() {
 
   if (!session || session.user.role !== "CSD") {
     redirect("/dashboard/admin_dashboard");
+  }else{
+    redirect("/dashboard/user_dashboard/eligibility-checker")
   }
 
-  return (
-    <div>
-      <h1>CSD Dashboard</h1>
-      <p>Welcome, {session.user.email}</p>
-    </div>
-  );
+
+
 }
