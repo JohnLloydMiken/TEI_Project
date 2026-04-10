@@ -22,6 +22,8 @@ export default function EligibilityCheckerPage() {
         </div>
         <Widgets batch={"April 2026"} qualified={5} claimed={2}/>
         <IndividualChecker/>
+
+        
     </div>
   );
 }

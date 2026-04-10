@@ -31,7 +31,7 @@ export const csdNav = [
       },
       {
         label: "Batch Checker",
-        href: "/dashboard/user_dashboard/batch_checker",
+        href: "/dashboard/user_dashboard/batch-checker/upload",
       },
     ],
   },
