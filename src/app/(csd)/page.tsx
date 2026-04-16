@@ -7,9 +7,9 @@ export default async function UserDashboard() {
   const session = await getServerSession(authOptions);
 
   if (!session || session.user.role !== "CSD") {
-    redirect("/dashboard/admin_dashboard");
+    redirect("/login");
   }else{
-    redirect("/dashboard/user_dashboard/eligibility-checker")
+    redirect("/individual-checker")
   }
 
 

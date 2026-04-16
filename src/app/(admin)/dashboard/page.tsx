@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
 
   // Double-check: middleware should catch this first, but just in case
   if (!session || session.user.role !== "ADMIN") {
-    redirect("/dashboard/user_dashboard");
+    redirect("/individual-checker");
   }
 
   return (
