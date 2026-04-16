@@ -8,15 +8,15 @@ export default function DashboardHeader({ name, role }: DashboardHeaderProps) {
   return (
     // ✅ w-full so it spans the entire top
     <header className="w-full bg-teiblue">
-      <div className="w-full px-6 py-3 flex flex-row justify-between items-center">
-        <p className="text-xs uppercase text-gray-100 font-medium">
+      <div className="w-full px-6 py-3 flex flex-row md:justify-between justify-end items-center">
+        <p className=" text-xs md:block hidden uppercase text-gray-300 font-normal">
           Tarlac Electric Inc. — Bill Deposit Refund System
         </p>
         <div className="flex flex-row items-center gap-2">
           <div className="rounded-full  p-2 bg-teiorange">
             <User className="text-white w-5 h-5" />
           </div>
-          <p className="uppercase text-sm text-gray-100">
+          <p className="uppercase text-sm font-medium text-gray-100">
             {name} — {isAdmin ? "System Administrator" : "CSD"}
           </p>
         </div>

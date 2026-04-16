@@ -13,14 +13,14 @@ export default async function DashboardLayout({
   const navItems = isAdmin ? adminNav : csdNav;
 
   return (
-    // ✅ full height column — header on top, sidebar+content below
     <div className="flex flex-col h-screen">
       <DashboardHeader name={session?.user.name} role={session?.user.role} />
 
-      {/* ✅ sidebar and main content side by side */}
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar navItems={navItems} isAdmin={isAdmin} />
-        <main className="flex-1 overflow-y-auto bg-blue-50/70 p-6">
+
+        {/* Offset on mobile so hamburger button doesn't overlap content */}
+        <main className="flex-1 overflow-y-auto bg-gray-100 p-6 md:pt-6 pt-16">
           {children}
         </main>
       </div>

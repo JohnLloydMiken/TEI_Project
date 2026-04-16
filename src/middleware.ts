@@ -11,18 +11,18 @@ export default withAuth(
     // Redirect /dashboard root based on role
     if (path === "/dashboard") {
       return role === "ADMIN"
-        ? NextResponse.redirect(new URL("/dashboard/admin_dashboard", req.url))
-        : NextResponse.redirect(new URL("/dashboard/user_dashboard", req.url));
+        ? NextResponse.redirect(new URL("/dashboard", req.url))
+        : NextResponse.redirect(new URL("/individual-checker", req.url));
     }
 
     // Block CSD from any /dashboard/admin_dashboard/* route
-    if (path.startsWith("/dashboard/admin_dashboard") && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard/user_dashboard", req.url));
+    if (path.startsWith("/dashboard") && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/individual-checker", req.url));
     }
 
     // Block ADMIN from any /dashboard/user_dashboard/* route
-    if (path.startsWith("/dashboard/user_dashboard") && role === "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard/admin_dashboard", req.url));
+    if (path.startsWith("/individual-checker") && role === "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     return NextResponse.next();
@@ -36,5 +36,8 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/individual-checker/:path*"
+  ],
 };

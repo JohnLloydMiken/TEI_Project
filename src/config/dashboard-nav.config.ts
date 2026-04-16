@@ -27,7 +27,7 @@ export const csdNav = [
     content: [
       {
         label: "Eligibility Checker",
-        href: "/dashboard/user_dashboard/eligibility-checker",
+        href: "/individual-checker",
       },
       {
         label: "Batch Checker",
