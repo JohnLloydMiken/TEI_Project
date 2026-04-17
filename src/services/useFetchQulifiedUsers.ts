@@ -1,7 +1,7 @@
 // src/services/useFetchQualifiedUsers.ts
 "use client";
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+
 type Customer = {
   id: number;
   accountNo: string;
@@ -15,6 +15,10 @@ type Customer = {
     year: number;
     fileName: string;
   };
+  deadlineDate: string,
+  daysRemaining: number
+  isExpired: Boolean,
+  status:  "Eligible" | "Expired" | "Claimed";
 };
 
 type FetchState = {
@@ -23,20 +27,23 @@ type FetchState = {
   error: string | null;
 };
 
-export default function useFetchQualifiedUsers(accountNo: string): FetchState {
+export default function useFetchQualifiedUsers(accountNumber: string): FetchState {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
  
   useEffect(() => {
-    if (!accountNo) return; // ✅ don't fetch if empty
+    if (!accountNumber) {
+  setCustomer(null); // ← add this
+  return;
+} // ✅ don't fetch if empty
 
     const fetchCustomer = async () => {
       setLoading(true);
       setError(null);
-
+      setCustomer(null); 
       try {
-        const response = await fetch(`/api/customers/${accountNo}`);
+        const response = await fetch(`/api/customers/${accountNumber}`);
         const json = await response.json();
         
         if (!response.ok) {
@@ -54,7 +61,7 @@ export default function useFetchQualifiedUsers(accountNo: string): FetchState {
     };
 
     fetchCustomer();
-  }, [accountNo]);
+  }, [accountNumber]);
 
   return { customer, loading, error };
 }

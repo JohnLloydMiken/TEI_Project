@@ -32,7 +32,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
           </div>
 
           <div className="flex flex-row items-center justify-center gap-3 bg-teiblue shadow-[0_4px_10px_0_rgba(59,130,246,0.4)] p-2 rounded-xl">
-            <item.Icon color="white" size={50} strokeWidth={1.5} />
+            <item.Icon color="white" size={44} strokeWidth={1.5} />
           </div>
         </motion.div>
       ))}
@@ -59,12 +59,12 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
             </li>
             <li className="px-3 py-1 bg-red-100 border border-red-400 rounded text-center">
               <span className="text-[10px] font-bold text-red-800 uppercase">
-                Claimed
+                Expired
               </span>
             </li>
             <li className="px-3 py-1 bg-blue-100 border border-blue-400 rounded text-center">
               <span className="text-[10px] font-bold text-blue-800 uppercase">
-                Expired
+                Claimed
               </span>
             </li>
             <li className="px-3 py-1 bg-gray-100 border border-gray-400 rounded text-center">
