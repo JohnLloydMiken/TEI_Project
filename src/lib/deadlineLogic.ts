@@ -1,27 +1,48 @@
-interface DeadlineProps {
-  notificationDate: string | number | Date;
-  claimDate: string | number | Date;
+// src/lib/deadline.ts
+
+export interface DeadlineInfo {
+  deadlineDate: string;    // ISO string — safe to serialize over the wire
+  daysRemaining: number;   // 0 if expired
+  isExpired: boolean;
+  status: "Eligible" | "Expired" | "Claimed";
 }
 
-export default function Deadline({
-  notificationDate,
-  claimDate,
-}: DeadlineProps): boolean {
-  const start = new Date(notificationDate);
-  const claim = new Date(claimDate);
+export function computeDeadline(
+  notificationDate: Date,
+  claimedAt: Date | null
+): DeadlineInfo {
+  const deadline = getDeadline(notificationDate);
+  const now = new Date();
 
-  // Create the deadline by adding exactly 1 month to the notification date
-  const deadline = new Date(start);
-  deadline.setMonth(start.getMonth() + 1);
+  // Normalize both to "Start of Day" for a pure day-based count
+  const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDeadline = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
 
-  // Compare the raw time values (milliseconds)
-  const isValid = claim.getTime() <= deadline.getTime();
+  const msLeft = startOfDeadline.getTime() - startOfNow.getTime();
+  const daysRemaining = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60 * 24)));
+  
+  // A customer is expired only if today is strictly AFTER the deadline date
+  const isExpired = startOfNow > startOfDeadline;
 
-  if (!isValid) {
-    console.log("Your eligibility has expired");
-    return false;
+  // Status priority logic
+  let status: "Eligible" | "Expired" | "Claimed" = "Eligible";
+  if (claimedAt) {
+    status = "Claimed";
+  } else if (isExpired) {
+    status = "Expired";
   }
 
-  console.log("You can claim your eligibility");
-  return true;
+  return {
+    deadlineDate: deadline.toISOString(),
+    daysRemaining: status === "Claimed" ? 0 : daysRemaining,
+    isExpired: status === "Expired", // Only true if NOT claimed and past date
+    status,
+  };
+}
+
+// Isolated so logic is testable separately
+function getDeadline(notificationDate: Date): Date {
+  const deadline = new Date(notificationDate);
+  deadline.setMonth(deadline.getMonth() + 1);
+  return deadline;
 }

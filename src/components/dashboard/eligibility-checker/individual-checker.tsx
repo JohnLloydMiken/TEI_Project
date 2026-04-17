@@ -3,12 +3,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { motion } from "motion/react";
-
+import CustomerCard from "./customer-card";
+import { useState, useEffect } from "react";
+import useFetchQualifiedUsers from "@/services/useFetchQulifiedUsers";
+import { toast } from "sonner";
 export default function IndividualChecker() {
   const pathname = usePathname();
   const individualPath = "/individual-checker";
   const batchPastePath = "/upload";
   const batchUploadPath = "/upload-file";
+  const [accountNo, setAccountNo] = useState("");
+  const [query, setQuery] = useState(""); // ✅ only fetch on button click
+  const { customer, loading, error } = useFetchQualifiedUsers(query);
 
   const tabs = [
     { label: "Individual", href: individualPath },
@@ -16,6 +22,18 @@ export default function IndividualChecker() {
     { label: "Batch (upload)", href: batchUploadPath },
   ];
 
+  function handleCheck() {
+    setQuery(accountNo.trim()); // ✅ triggers the useEffect in the hook
+  }
+  function handleClear(){
+    setAccountNo("")
+    setQuery("")
+    
+  }
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -24,7 +42,7 @@ export default function IndividualChecker() {
       className="w-full rounded-lg bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)] flex flex-col"
     >
       {/* Header */}
-      <div className="bg-teiblue p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
+      <div className="bg-teiblue px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
         <p className="text-white text-lg sm:text-xl font-normal">
           Individual Checker
         </p>
@@ -41,7 +59,7 @@ export default function IndividualChecker() {
             return (
               <li
                 key={tab.href}
-                className={`group px-3 sm:px-4 py-3 hover:border-b-4 hover:border-b-teiorange transition-all ${
+                className={`group px-3 sm:px-4 py-2 hover:border-b-4 hover:border-b-teiorange transition-all ${
                   isActive ? "border-b-4 border-b-teiorange" : "border-none"
                 }`}
               >
@@ -67,10 +85,13 @@ export default function IndividualChecker() {
             name="customer-search"
             className="flex-1 min-w-0 border border-gray-200 rounded-lg p-2.5 sm:p-3 bg-gray-100 outline-none text-sm sm:text-base"
             placeholder="Account number (e.g. TEI-00001)"
+            value={accountNo}
+            onChange={(e) => setAccountNo(e.target.value)}
           />
           <motion.button
             whileTap={{ scale: 0.96 }}
             whileHover={{ scale: 1.02 }}
+            onClick={handleCheck}
             className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiblue text-white text-sm sm:text-base"
           >
             <span className="hidden xs:inline">Search</span>
@@ -80,11 +101,25 @@ export default function IndividualChecker() {
       </div>
 
       {/* Results placeholder */}
-      <div className="p-4 flex flex-col space-y-3">
+      <div className="p-4 flex flex-col justify-center items-center ">
         <hr className="border-gray-200" />
-        <p className="text-center text-xs sm:text-sm uppercase text-gray-400 tracking-wider">
-          your results are here
-        </p>
+
+        {!customer ? (
+          <p className="text-center text-xs sm:text-sm uppercase text-gray-400 tracking-wider">
+            Your results are here
+          </p>
+        ) : (
+          <CustomerCard
+            accountName={customer?.customerName}
+            accountNumber={customer?.accountNo}
+            notifiedDate={customer?.notificationDate ?? null}
+            deadlineDate={customer?.deadlineDate ?? null}
+            daysRemaining={customer?.daysRemaining ?? null}
+            depositAmount={customer?.depositAmount ?? null}
+            status={customer?.status ?? null}
+            onClear={handleClear}
+          />
+        )}
       </div>
     </motion.div>
   );

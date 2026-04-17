@@ -1,32 +1,60 @@
-// src/app/dashboard/user_dashboard/eligibility_checker/page.tsx
-"use client"; // ✅ needed because we're using a hook
-import * as React from "react";
-import { useState } from "react";
-import useFetchQualifiedUsers from "@/services/useFetchQulifiedUsers";
+"use client";
+import { useEffect, useState } from "react";
 import Widgets from "@/components/dashboard/eligibility-checker/widgets";
 import IndividualChecker from "@/components/dashboard/eligibility-checker/individual-checker";
-import Deadline from "@/lib/deadlineLogic";
+
 export default function EligibilityCheckerPage() {
-  const [accountNo, setAccountNo] = useState("");
-  const [query, setQuery] = useState(""); // ✅ only fetch on button click
-  const { customer, loading, error } = useFetchQualifiedUsers(query);
+  // Initialize with 0 to avoid layout shift
+  const [customerCount, setCustomerCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [batch, setBatch] = useState("");
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch("/api/customers/all");
 
-  function handleCheck() {
-    setQuery(accountNo.trim()); // ✅ triggers the useEffect in the hook
-  }
+        if (!response.ok) throw new Error("Failed to Fetch");
 
+        const result = await response.json();
+
+        // Accessing result.data because of your API structure
+        if (result.data && result.data.length > 0) {
+          setCustomerCount(result.data.length);
+          const batchDate = result.data[0].batch;
+         
+          const batchMonth = new Intl.DateTimeFormat("en-US", {
+            month: "long",
+          }).format(new Date(batchDate.year, batchDate.month - 1));
+           const batchLabel = `${batchMonth} ${batchDate.year}`;
+          setBatch(batchLabel);
+        }
+      } catch (e) {
+        console.error("Fetch error:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []); // ✅ Empty dependency array prevents infinite loops
 
   return (
     <div className="w-full flex flex-col gap-3">
-        <div >
-          <h1 className="text-2xl text-teiblue font-bold">Eligibility Checker</h1>
-          <p className="text-sm text-gray-400 font-light">Dashboard / Checker / <span className="underline underline-offset-3">Individual</span></p>
-        </div>
-        <Widgets batch={"April 2026"} qualified={5} claimed={2}/>
-        <IndividualChecker/>
-        
+      <div>
+        <h1 className="text-2xl text-teiblue font-bold">Eligibility Checker</h1>
+        <p className="text-sm text-gray-400 font-light">
+          Dashboard / Checker /{" "}
+          <span className="underline underline-offset-3">Individual</span>
+        </p>
+      </div>
 
-        
+      <Widgets
+        batch={batch}
+        qualified={isLoading ? "..." : customerCount}
+        claimed={2}
+      />
+
+      <IndividualChecker />
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function DashboardSidebar({
         className="px-6 py-4 bg-teiblue border-b border-white/20 flex items-center justify-between"
       >
         <div>
-          <p className="text-white font-medium text-xl tracking-normal">
+          <p className="text-white font-medium text-2xl tracking-normal">
             TEI BDR System
           </p>
           <p className="text-white/60 text-xs mt-0.5">
@@ -107,17 +107,7 @@ export default function DashboardSidebar({
                       </p>
 
                       {/* Active indicator pill */}
-                      {isActive && (
-                        <motion.span
-                          layoutId="active-pill"
-                          className="ml-auto w-1.5 h-1.5 rounded-full bg-teiorange"
-                          transition={{
-                            type: "spring",
-                            stiffness: 380,
-                            damping: 30,
-                          }}
-                        />
-                      )}
+                     
                     </motion.div>
                   </Link>
                 );
