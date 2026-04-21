@@ -7,7 +7,7 @@ import CustomerCard from "./customer-card";
 import { useState, useEffect } from "react";
 import useFetchQualifiedUsers from "@/services/useFetchQulifiedUsers";
 import { toast } from "sonner";
-export default function IndividualChecker() {
+export default function BatchPasteChecker() {
   const pathname = usePathname();
   const individualPath = "/individual-checker";
   const batchPastePath = "/batch-checker/paste";
@@ -44,10 +44,10 @@ export default function IndividualChecker() {
       {/* Header */}
       <div className="bg-teiblue px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
         <p className="text-white text-lg sm:text-xl font-normal">
-          Individual Checker
+          Bactch Paste Checker
         </p>
         <p className="text-white/60 text-xs sm:text-sm font-normal">
-          Enter account number to verify
+          Enter account numbes to verify
         </p>
       </div>
 
@@ -80,12 +80,13 @@ export default function IndividualChecker() {
       {/* Search */}
       <div className="w-full px-4 py-4 sm:px-6">
         <div className="w-full sm:w-10/12 md:w-11/12 flex flex-row items-center gap-2 sm:gap-3 mx-auto">
-          <input
-            type="text"
+          <textarea
+            
             name="customer-search"
-            className="flex-1 min-w-0 border border-gray-200 rounded-lg p-2.5 sm:p-3 bg-gray-100 outline-none text-sm sm:text-base"
-            placeholder="Account number (e.g. TEI-00001)"
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg p-2.5 sm:p-3 bg-gray-100 outline-none text-sm sm:text-base resize-none"
+            placeholder="Paste Account Number here one per line"
             value={accountNo}
+            
             onChange={(e) => setAccountNo(e.target.value)}
           />
           <motion.button
@@ -100,27 +101,7 @@ export default function IndividualChecker() {
         </div>
       </div>
 
-      {/* Results placeholder */}
-      <div className="p-4 flex flex-col justify-center items-center ">
-        <hr className="border-gray-200" />
-
-        {!customer ? (
-          <p className="text-center text-xs sm:text-sm uppercase text-gray-400 tracking-wider">
-            Your results are here
-          </p>
-        ) : (
-          <CustomerCard
-            accountName={customer?.customerName}
-            accountNumber={customer?.accountNo}
-            notifiedDate={customer?.notificationDate ?? null}
-            deadlineDate={customer?.deadlineDate ?? null}
-            daysRemaining={customer?.daysRemaining ?? null}
-            depositAmount={customer?.depositAmount ?? null}
-            status={customer?.status ?? null}
-            onClear={handleClear}
-          />
-        )}
-      </div>
+      
     </motion.div>
   );
 }

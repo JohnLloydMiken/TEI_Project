@@ -5,7 +5,7 @@ import { DashboardSidebarProps } from "@/types/dashboard/dashboard-types";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Menu, LogOut } from "lucide-react";
-
+import { signOut } from "next-auth/react";
 export default function DashboardSidebar({
   navItems,
   isAdmin,
@@ -13,6 +13,12 @@ export default function DashboardSidebar({
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
+  const handleSignOut = async ()=> {
+      await signOut({
+        callbackUrl: "/login",
+        redirect: true
+      })
+  }
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Role label */}
@@ -130,7 +136,8 @@ export default function DashboardSidebar({
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-2 text-sm text-teiorange hover:text-red-500 transition-colors font-medium"
+          className="flex items-center gap-2 text-sm text-teiorange hover:text-red-500 transition-colors font-medium cursor-pointer"
+          onClick={handleSignOut}
         >
           <LogOut size={14} />
           Sign out

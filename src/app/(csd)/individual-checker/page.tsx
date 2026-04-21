@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Widgets from "@/components/dashboard/eligibility-checker/widgets";
+import Widgets from "@/components/dashboard/eligibility-checker/widgets/widgets";
 import IndividualChecker from "@/components/dashboard/eligibility-checker/individual-checker";
 
 export default function EligibilityCheckerPage() {
