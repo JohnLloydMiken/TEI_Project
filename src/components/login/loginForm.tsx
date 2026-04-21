@@ -33,7 +33,7 @@ export default function LoginForm() {
       toast.success("Succesfully Log In");
 
       setTimeout(() => {
-        router.push("/dashboard"); // ✅ success
+        router.push("/dashboard/upload-list"); // ✅ success
         router.refresh();
       }, 1500);
     }

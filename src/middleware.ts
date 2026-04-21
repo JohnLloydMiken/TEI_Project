@@ -11,7 +11,7 @@ export default withAuth(
     // Redirect /dashboard root based on role
     if (path === "/dashboard") {
       return role === "ADMIN"
-        ? NextResponse.redirect(new URL("/dashboard", req.url))
+        ? NextResponse.redirect(new URL("/dashboard/upload-list", req.url))
         : NextResponse.redirect(new URL("/individual-checker", req.url));
     }
 
