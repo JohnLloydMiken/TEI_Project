@@ -13,7 +13,7 @@ export default function BatchPasteWidgets({ numberOfAcc, eligible, claimed, expi
   return (
     <div className="w-full grid grid-col-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-4">
       {[
-        { label: "Account Entered", value: numberOfAcc, Icon: Users },
+        { label: "Account Entered", value: numberOfAcc, Icon: Users, },
         { label: "Eligible", value: eligible, Icon: Bookmark },
         { label: "Claimed", value: claimed, Icon: CheckLine },
         { label: "Expired", value: expired, Icon: CircleX },
