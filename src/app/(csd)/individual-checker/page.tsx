@@ -43,8 +43,7 @@ export default function EligibilityCheckerPage() {
       <div>
         <h1 className="text-2xl text-teiblue font-bold">Eligibility Checker</h1>
         <p className="text-sm text-gray-400 font-light">
-          Dashboard / Checker /{" "}
-          <span className="underline underline-offset-3">Individual</span>
+         Verify account refund eligibility in bulk or individually
         </p>
       </div>
 

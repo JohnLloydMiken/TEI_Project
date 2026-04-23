@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Trash } from "lucide-react";
 import { motion } from "motion/react";
 
 import { useState, useEffect } from "react";
@@ -9,15 +9,26 @@ import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
 import { toast } from "sonner";
 import CustomerTable from "./batch/customer-table";
 
-export default function BatchPasteChecker() {
+
+interface BatchPasteCheckerProps {
+  results: ReturnType<typeof useBatchCustomerFetch>["results"];
+  loading: boolean;
+  error: string | null;
+  fetchBatch: (accounts: string[]) => void;
+  clear: () => void;
+   onRemove: (id: number) => void; 
+}
+
+export default function BatchPasteChecker({
+  results, loading, error, fetchBatch, clear, onRemove
+}: BatchPasteCheckerProps) {
   const pathname = usePathname();
 
   const individualPath = "/individual-checker";
   const batchPastePath = "/batch-checker/paste";
   const batchUploadPath = "/batch-checker/upload";
   const [accountNo, setAccountNo] = useState("");
-  const { results, loading, error, fetchBatch, clear } =
-    useBatchCustomerFetch();
+
 
   const tabs = [
     { label: "Individual", href: individualPath },
@@ -103,14 +114,23 @@ export default function BatchPasteChecker() {
               onClick={handleCheck}
               className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiblue text-white text-sm sm:text-base"
             >
-              <span className="hidden xs:inline">Search</span>
+              <span className=" xs:inline">Search</span>
               <Search color="white" size={18} />
+            </motion.button>
+             <motion.button
+              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              onClick={handleCheck}
+              className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiorange text-white text-sm sm:text-base"
+            >
+              <span className=" xs:inline">Clear</span>
+              <Trash color="white" size={18} />
             </motion.button>
           </div>
         </div>
       </div>
       <div className="bg-white rounded-lg shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]">
-        <CustomerTable customers={results?.found ?? []} />
+        <CustomerTable customers={results?.found ?? []} onRemove={onRemove} />
       </div>
     </motion.div>
   );
