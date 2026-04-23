@@ -1,10 +1,11 @@
 "use client";
 import { motion } from "motion/react";
-
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 
 interface BatchList {
   customers: Customer[];
+  onRemove: (id: number) => void; // ← new
 }
 type Customer = {
   id: number;
@@ -14,18 +15,73 @@ type Customer = {
   notificationDate: string;
   claimedAt: string | null;
   claimedBy: number | null;
-  batch: {
-    month: number;
-    year: number;
-    fileName: string;
-  };
+  batch: { month: number; year: number; fileName: string };
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
   status: "Eligible" | "Expired" | "Claimed";
 };
 
-export default function CustomerTable({ customers }: BatchList) {
+const StatusBadge = ({ status }: { status: Customer["status"] }) => {
+  const styles = {
+    Eligible: "bg-green-50 text-green-600 border border-green-200",
+    Expired: "bg-red-50 text-red-500 border border-red-200",
+    Claimed: "bg-blue-50 text-blue-600 border border-blue-200",
+  };
+  const dotColor = {
+    Eligible: "bg-green-500",
+    Expired: "bg-red-500",
+    Claimed: "bg-blue-500",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status]}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor[status]}`} />
+      {status}
+    </span>
+  );
+};
+
+const DaysChip = ({
+  days,
+  status,
+}: {
+  days: number;
+  status: Customer["status"];
+}) => {
+  if (status === "Expired" || days === 0) {
+    return <span className="text-sm font-semibold text-gray-400">0 days</span>;
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
+      <Clock className="w-3.5 h-3.5" />
+      {days} days
+    </span>
+  );
+};
+
+const ActionButton = ({ status }: { status: Customer["status"] }) => {
+  const isActive = status === "Eligible";
+  return (
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      whileHover={{ scale: 1.02 }}
+      disabled={!isActive}
+      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap
+        ${
+          isActive
+            ? "bg-teiorange text-white hover:bg-orange-600 shadow-sm cursor-pointer"
+            : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+        }`}
+    >
+      Mark as Claimed
+    </motion.button>
+  );
+};
+
+export default function CustomerTable({ customers, onRemove }: BatchList) {
   const formatDate = (d: Date | string | null) =>
     d
       ? new Date(d).toLocaleDateString("en-PH", {
@@ -38,38 +94,87 @@ export default function CustomerTable({ customers }: BatchList) {
   if (!customers) {
     toast.error("User Not Found");
   }
-  return (
-    <motion.div className="overflow-x-auto  sm:px-6 py-3">
-      <table className="w-full text-sm text-left ">
-        {/* ✅ thead outside tbody, both direct children of table */}
 
-        <thead className="">
-          <tr className="bg-teiblue">
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Account Number</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Account Name</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Status</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Notified Date</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Days Remaining</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Deadline Date</th>
-            <th className="text-white text-[1rem] font-normal px-4 py-3">Action</th>
+  return (
+    <motion.div className="overflow-x-auto py-3 px-3">
+      <table className="w-full text-sm text-left">
+        <thead>
+          <tr className="bg-[#f0f4f9]">
+            {[
+              "Account Number",
+              "Account Name",
+              "Status",
+              "Notified Date",
+              "Days Remaining",
+              "Deadline Date",
+              "Action",
+            ].map((h) => (
+              <th
+                key={h}
+                className="text-xs font-bold uppercase tracking-wider text-gray-400 px-4 py-3 whitespace-nowrap"
+              >
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
 
         <tbody>
           {customers.map((c) => (
-            // ✅ key on tr, not on fragment
-            <tr key={c.id} className="border-b border-b-gray-300">
-              {/* ✅ td inside tr, not tr inside tr */}
-              <td className="text-gray-400 text-sm font-normal px-4 py-3">{c.accountNo}</td>
-              <td className="text-gray-400 text-sm font-normal px-4 py-3">{c.customerName}</td>
-              <td>{c.status}</td>
-              <td className="text-gray-400 text-sm font-normal px-4 py-3">{formatDate(c.notificationDate)}</td>
-              <td>{c.daysRemaining}</td>
-              <td className="text-gray-400 text-sm font-normal px-4 py-3">{formatDate(c.deadlineDate)}</td>
-              <td>
-                <motion.button whileTap={{ scale: 0.96 }}>
-                  Mark as Claimed
-                </motion.button>
+            <tr
+              key={c.id}
+              className="border-b border-gray-100 hover:bg-[#f8fafc] transition-colors"
+            >
+              {/* Account Number */}
+              <td className="px-4 py-4">
+                <span className="font-mono text-sm font-medium text-teiblue hover:underline cursor-pointer">
+                  {c.accountNo}
+                </span>
+              </td>
+
+              {/* Account Name */}
+              <td className="px-4 py-4">
+                <span className="text-sm font-semibold text-gray-800">
+                  {c.customerName}
+                </span>
+              </td>
+
+              {/* Status */}
+              <td className="px-4 py-4">
+                <StatusBadge status={c.status} />
+              </td>
+
+              {/* Notified Date */}
+              <td className="px-4 py-4">
+                <span className="text-sm text-gray-500">
+                  {formatDate(c.notificationDate)}
+                </span>
+              </td>
+
+              {/* Days Remaining */}
+              <td className="px-4 py-4">
+                <DaysChip days={c.daysRemaining} status={c.status} />
+              </td>
+
+              {/* Deadline Date */}
+              <td className="px-4 py-4">
+                <span className="text-sm text-gray-500">
+                  {formatDate(c.deadlineDate)}
+                </span>
+              </td>
+
+              <td className="px-4 py-4">
+                <div className="flex items-center gap-2">
+                  <ActionButton status={c.status} />
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => onRemove(c.id)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-200 bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-400 hover:border-red-200 transition-colors whitespace-nowrap cursor-pointer"
+                  >
+                    Remove
+                  </motion.button>
+                </div>
               </td>
             </tr>
           ))}

@@ -21,7 +21,7 @@ type Customer = {
 };
 interface BatchResult {
   found: Customer[];
-  notFound: string[];
+  notFound?: string[];
 }
 
 type BatchFetchState = {
