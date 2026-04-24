@@ -67,11 +67,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
                 Claimed
               </span>
             </li>
-            <li className="px-3 py-1 bg-gray-100 border border-gray-400 rounded text-center">
-              <span className="text-[10px] font-bold text-gray-800 uppercase">
-                Not found
-              </span>
-            </li>
+           
           </ul>
         </div>
       </motion.div>

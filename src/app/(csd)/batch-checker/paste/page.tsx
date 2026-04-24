@@ -17,6 +17,7 @@ export default function BatchPaste() {
   const notFound = results?.notFound?.length ?? 0;
   const total = found.length + notFound;
   const [localResults, setLocalResults] = useState(results?.found ?? []);
+  
 
   // keep localResults in sync when a new search runs
   useEffect(() => {

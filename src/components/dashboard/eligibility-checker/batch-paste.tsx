@@ -2,13 +2,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Trash } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { useState, useEffect } from "react";
 import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
 import { toast } from "sonner";
 import CustomerTable from "./batch/customer-table";
-
+import NotFoundTable from "@/components/dashboard/eligibility-checker/batch/not-found";
 
 interface BatchPasteCheckerProps {
   results: ReturnType<typeof useBatchCustomerFetch>["results"];
@@ -16,25 +16,36 @@ interface BatchPasteCheckerProps {
   error: string | null;
   fetchBatch: (accounts: string[]) => void;
   clear: () => void;
-   onRemove: (id: number) => void; 
+  onRemove: (id: number) => void;
 }
 
+type ViewTab = "found" | "notFound";
+
 export default function BatchPasteChecker({
-  results, loading, error, fetchBatch, clear, onRemove
+  results,
+  loading,
+  error,
+  fetchBatch,
+  clear,
+  onRemove,
 }: BatchPasteCheckerProps) {
   const pathname = usePathname();
 
   const individualPath = "/individual-checker";
   const batchPastePath = "/batch-checker/paste";
   const batchUploadPath = "/batch-checker/upload";
-  const [accountNo, setAccountNo] = useState("");
 
+  const [accountNo, setAccountNo] = useState("");
+  const [activeView, setActiveView] = useState<ViewTab>("found");
 
   const tabs = [
     { label: "Individual", href: individualPath },
     { label: "Batch (paste)", href: batchPastePath },
     { label: "Batch (upload)", href: batchUploadPath },
   ];
+
+  const foundCount = results?.found?.length ?? 0;
+  const notFoundCount = results?.notFound?.length ?? 0;
 
   function handleCheck() {
     const array = accountNo
@@ -50,16 +61,26 @@ export default function BatchPasteChecker({
     clear();
   }
 
+  // Reset to "found" tab whenever a new search completes
+  useEffect(() => {
+    if (results) setActiveView("found");
+  }, [results]);
+
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
+
+  const viewTabs: { key: ViewTab; label: string; count: number }[] = [
+    { key: "found", label: "Found", count: foundCount },
+    { key: "notFound", label: "Not Found", count: notFoundCount },
+  ];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="w-full  flex flex-col space-y-3"
+      className="w-full flex flex-col space-y-3"
     >
       <div className="w-full rounded-lg bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]">
         {/* Header */}
@@ -68,11 +89,11 @@ export default function BatchPasteChecker({
             Batch Paste Checker
           </p>
           <p className="text-white/60 text-xs sm:text-sm font-normal">
-            Enter account numbes to verify
+            Enter account numbers to verify
           </p>
         </div>
 
-        {/* Tabs */}
+        {/* Nav Tabs */}
         <div className="border-b border-b-gray-200 overflow-x-auto scrollbar-none">
           <ul className="flex flex-row min-w-max">
             {tabs.map((tab) => {
@@ -112,25 +133,78 @@ export default function BatchPasteChecker({
               whileTap={{ scale: 0.96 }}
               whileHover={{ scale: 1.02 }}
               onClick={handleCheck}
-              className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiblue text-white text-sm sm:text-base"
+              disabled={loading}
+              className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiblue text-white text-sm sm:text-base disabled:opacity-60"
             >
-              <span className=" xs:inline">Search</span>
+              <span className="xs:inline">Search</span>
               <Search color="white" size={18} />
             </motion.button>
-             <motion.button
+            <motion.button
               whileTap={{ scale: 0.96 }}
               whileHover={{ scale: 1.02 }}
-              onClick={handleCheck}
+              onClick={handleClear}
               className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiorange text-white text-sm sm:text-base"
             >
-              <span className=" xs:inline">Clear</span>
+              <span className="xs:inline">Clear</span>
               <Trash color="white" size={18} />
             </motion.button>
           </div>
         </div>
       </div>
+
+      {/* Results Panel */}
       <div className="bg-white rounded-lg shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]">
-        <CustomerTable customers={results?.found ?? []} onRemove={onRemove} />
+        {/* View Tab Switcher */}
+        <div className="p-3 flex flex-row items-center gap-2 border-b border-gray-100">
+          {viewTabs.map(({ key, label, count }) => {
+            const isActive = activeView === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveView(key)}
+                className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? key === "found"
+                      ? "bg-teiblue text-white shadow-sm"
+                      : "bg-teiorange text-white shadow-sm"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+                {/* Count badge */}
+                <span
+                  className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Table Area with fade transition */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeView}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            {activeView === "found" ? (
+              <CustomerTable
+                customers={results?.found ?? []}
+                onRemove={onRemove}
+              />
+            ) : (
+              <NotFoundTable accountNumbers={results?.notFound ?? []} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </motion.div>
   );

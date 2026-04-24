@@ -23,7 +23,7 @@ export const csdNav = [
     title: "Checker",
     content: [
       { label: "Eligibility Checker", href: "/individual-checker",    Icon: "search"    },
-      { label: "Batch Checker",       href: "/batch-checker/paste",   Icon: "file-text" },
+      { label: "Batch Checker",       href: "/batch-checker/paste" ,   Icon: "file-text", href2: "/batch-checker/upload"  },
     ] satisfies SidebarContent[],
   },
   {
