@@ -8,6 +8,7 @@ export type IconKey = "search" | "file-text" | "arrow-down" | "folder-up";
 export interface SidebarContent {
   label: string;
   href: string;
+  href2?:string,
   Icon?: IconKey; // optional so nav items without icons still compile
 }
 

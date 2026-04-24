@@ -87,7 +87,7 @@ import { Playwrite_NO } from "next/font/google";
                   </p>
                 </div>
                 {item.content.map((cont) => {
-                  const isActive = path === cont.href;
+                  const isActive = path === cont.href || (cont.href2 && path === cont.href2);
            
                  const IconComponent = cont.Icon ? ICON_MAP[cont.Icon] : Search ;
                  
