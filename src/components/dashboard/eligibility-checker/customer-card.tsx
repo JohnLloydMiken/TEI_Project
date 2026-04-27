@@ -23,7 +23,9 @@ export default function CustomerCard({
   daysRemaining, // Fixed spelling
   depositAmount,
   status,
-  onClear
+  claiming,
+  onClaim,
+  onClear,
 }: CustomerCardProps) {
   const canClaim = status === "Eligible";
   const totalDays = 30;
@@ -137,23 +139,26 @@ export default function CustomerCard({
       {/* Actions */}
       <div className="relative z-10 flex gap-2">
         <button
-          disabled={!canClaim}
+          disabled={!canClaim || claiming}
+          onClick={onClaim}
           className={`flex-1 flex items-center justify-center gap-2 text-[13px] font-semibold py-2.5 rounded-xl transition-all shadow-sm
       ${
-        canClaim
+        canClaim && !claiming
           ? "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-blue-200"
           : "bg-gray-100 text-gray-400 cursor-not-allowed"
       }`}
         >
           <CheckCircle size={15} />
-          {status === "Claimed" && "Already Claimed"}
-          {status === "Expired" && "Eligibility Expired"}
-          {status === "Eligible" && "Mark as Claimed"}
-          {!status && "Mark as Claimed"}
+          {claiming && "Claiming..."}
+          {!claiming && status === "Claimed" && "Already Claimed"}
+          {!claiming && status === "Expired" && "Eligibility Expired"}
+          {!claiming && status === "Eligible" && "Mark as Claimed"}
+          {!claiming && !status && "Mark as Claimed"}
         </button>
-        <button 
-        onClick={onClear}
-        className="flex-[0.4] text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-all active:scale-95">
+        <button
+          onClick={onClear}
+          className="flex-[0.4] text-[13px] font-semibold text-gray-600 border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-all active:scale-95"
+        >
           Clear
         </button>
       </div>

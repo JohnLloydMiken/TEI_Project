@@ -8,6 +8,7 @@ import { div } from "motion/react-client";
 import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
 import { useState, useEffect } from "react";
 import BatchUpload from "@/components/dashboard/eligibility-checker/batch-upload";
+import useMarkAsClaimed from "@/services/useMarkeAsClaimed";
 export default function BatchExcelPage() {
   const { results, loading, error, fetchBatch, clear } =
     useBatchCustomerFetch();
@@ -20,14 +21,25 @@ export default function BatchExcelPage() {
   const notFound = results?.notFound?.length ?? 0;
   const total = found.length + notFound;
   const [localResults, setLocalResults] = useState(results?.found ?? []);
-
+  const { markAsClaimed, claimingIds } = useMarkAsClaimed(); // ← add
   // keep localResults in sync when a new search runs
-  useEffect(() => {
+ useEffect(() => {
     setLocalResults(results?.found ?? []);
   }, [results]);
 
   function handleRemove(id: number) {
     setLocalResults((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  // Optimistically flip the status to "Claimed" in local state
+  function handleClaim(id: number, accountNo: string) {
+    markAsClaimed(id, accountNo, (claimedId) => {
+      setLocalResults((prev) =>
+        prev.map((c) =>
+          c.id === claimedId ? { ...c, status: "Claimed" as const, claimedAt: new Date().toISOString() } : c
+        )
+      );
+    });
   }
   return (
     <div className="w-full flex flex-col gap-3">
@@ -52,16 +64,14 @@ export default function BatchExcelPage() {
       />
 
       <BatchUpload
-       results={{
-          ...results,
-          found: localResults,
-          notFound: results?.notFound ?? [],
-        }}
-        fetchBatch={fetchBatch}
-        clear={clear}
-        onRemove={handleRemove}
-        loading={loading} // ← missing
-        error={error} // ← missing
+        results={{ ...results, found: localResults, notFound: results?.notFound ?? [] }}
+      fetchBatch={fetchBatch}
+      clear={clear}
+      onRemove={handleRemove}
+      onClaim={handleClaim}       // ← add
+      claimingIds={claimingIds}   // ← add
+      loading={loading}
+      error={error}
       />
     </div>
   );

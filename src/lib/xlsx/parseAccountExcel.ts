@@ -1,7 +1,7 @@
 // src/lib/parseAccountExcel.ts
 import * as XLSX from "xlsx";
 
-const ACCEPTED_HEADERS = ["account no", "account number"];
+const ACCEPTED_HEADERS = ["account no", "account number", "accountNo", "account_no"];
 
 export type ParseResult =
   | { ok: true; accountNumbers: string[]; totalRows: number }

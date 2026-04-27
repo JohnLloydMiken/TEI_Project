@@ -17,6 +17,8 @@ interface BatchPasteUploadProps {
   fetchBatch: (accounts: string[]) => void;
   clear: () => void;
   onRemove: (id: number) => void;
+  onClaim: (id: number, accountNo: string) => void; // ← add
+  claimingIds: Set<number>;
 }
 
 type ViewTab = "found" | "notFound";
@@ -28,6 +30,8 @@ export default function BatchUpload({
   fetchBatch,
   clear,
   onRemove,
+  onClaim,
+  claimingIds,
 }: BatchPasteUploadProps) {
   const pathname = usePathname();
   const [activeView, setActiveView] = useState<ViewTab>("found");
@@ -200,8 +204,10 @@ export default function BatchUpload({
                 {activeView === "found" ? (
                   results.found.length > 0 ? (
                     <CustomerTable
-                      customers={results.found}
+                      customers={results?.found ?? []}
                       onRemove={onRemove}
+                      onClaim={onClaim} // ← add
+                      claimingIds={claimingIds} // ← add
                     />
                   ) : (
                     <p className="px-6 py-10 text-center text-sm text-gray-400">
