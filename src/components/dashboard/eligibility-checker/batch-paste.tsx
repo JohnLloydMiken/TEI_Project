@@ -17,6 +17,8 @@ interface BatchPasteCheckerProps {
   fetchBatch: (accounts: string[]) => void;
   clear: () => void;
   onRemove: (id: number) => void;
+  onClaim: (id: number, accountNo: string) => void; // ← add
+  claimingIds: Set<number>; // ← add
 }
 
 type ViewTab = "found" | "notFound";
@@ -28,6 +30,8 @@ export default function BatchPasteChecker({
   fetchBatch,
   clear,
   onRemove,
+  onClaim, // ← add
+  claimingIds,
 }: BatchPasteCheckerProps) {
   const pathname = usePathname();
 
@@ -199,6 +203,8 @@ export default function BatchPasteChecker({
               <CustomerTable
                 customers={results?.found ?? []}
                 onRemove={onRemove}
+                onClaim={onClaim} // ← add
+                claimingIds={claimingIds} // ← add
               />
             ) : (
               <NotFoundTable accountNumbers={results?.notFound ?? []} />

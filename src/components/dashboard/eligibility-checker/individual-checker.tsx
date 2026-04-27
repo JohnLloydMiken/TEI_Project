@@ -7,6 +7,7 @@ import CustomerCard from "./customer-card";
 import { useState, useEffect } from "react";
 import useFetchQualifiedUsers from "@/services/useFetchQulifiedUsers";
 import { toast } from "sonner";
+import useMarkAsClaimed from "@/services/useMarkeAsClaimed";
 export default function IndividualChecker() {
   const pathname = usePathname();
   const individualPath = "/individual-checker";
@@ -15,7 +16,16 @@ export default function IndividualChecker() {
   const [accountNo, setAccountNo] = useState("");
   const [query, setQuery] = useState(""); // ✅ only fetch on button click
   const { customer, loading, error } = useFetchQualifiedUsers(query);
+  const { markAsClaimed, claimingIds } = useMarkAsClaimed();
 
+async function handleClaim() {
+  if (!customer?.id || !customer?.accountNo) return;
+  await markAsClaimed(customer.id, customer.accountNo, () => {
+    // Re-fetch to get updated status from DB
+    setQuery("");
+    setTimeout(() => setQuery(accountNo.trim()), 100);
+  });
+}
   const tabs = [
     { label: "Individual", href: individualPath },
     { label: "Batch (paste)", href: batchPastePath },
@@ -25,10 +35,9 @@ export default function IndividualChecker() {
   function handleCheck() {
     setQuery(accountNo.trim()); // ✅ triggers the useEffect in the hook
   }
-  function handleClear(){
-    setAccountNo("")
-    setQuery("")
-    
+  function handleClear() {
+    setAccountNo("");
+    setQuery("");
   }
 
   useEffect(() => {
@@ -118,6 +127,8 @@ export default function IndividualChecker() {
             depositAmount={customer?.depositAmount ?? null}
             status={customer?.status ?? null}
             onClear={handleClear}
+            onClaim={handleClaim} // ← new
+            claiming={customer?.id ? claimingIds.has(customer.id) : false} // ← new
           />
         )}
       </div>

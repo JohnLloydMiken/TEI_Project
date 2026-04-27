@@ -5,8 +5,8 @@ export const adminNav = [
   {
     title: "Management",
     content: [
-      { label: "Upload List",      href: "/dashboard/admin_dashboard/upload_list",   Icon: "folder-up"  },
-      { label: "Claimed History",  href: "/dashboard/admin_dashboard/claimed_history", Icon: "file-text" },
+      { label: "Upload List",      href: "/dashboard/upload-list",   Icon: "folder-up"  },
+      { label: "Claimed History",  href: "/dashboard/claimed-history", Icon: "file-text" },
     ] satisfies SidebarContent[],
   },
   {
