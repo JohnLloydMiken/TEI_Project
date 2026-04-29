@@ -1,7 +1,8 @@
 // src/lib/parseAccountExcel.ts
 import * as XLSX from "xlsx";
 
-const ACCEPTED_HEADERS = ["account no", "account number", "accountNo", "account_no"];
+// Matches the real header exactly as it appears in the file
+const ACCOUNT_HEADER_VARIANTS = ["account_no", "account no"];
 
 export type ParseResult =
   | { ok: true; accountNumbers: string[]; totalRows: number }
@@ -14,37 +15,43 @@ export async function parseAccountExcel(file: File): Promise<ParseResult> {
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
 
+  // header: 1 gives a raw 2D array — no automatic header mapping
   const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-  if (!rows || rows.length < 2) {
+  if (!rows || rows.length < 3) {
+    // Need at least: title row + header row + 1 data row
     return {
       ok: false,
       error: "The file appears to be empty or has no data rows.",
     };
   }
 
-  // Normalize header row to lowercase for comparison
-  const headerRow = rows[0].map((h) => String(h ?? "").trim().toLowerCase());
+  // ── Row 0 is the report title label — skip it
+  // ── Row 1 is the actual header row
+  const headerRow = rows[1].map((h) => String(h ?? "").trim().toLowerCase());
 
-  const colIndex = headerRow.findIndex((h) => ACCEPTED_HEADERS.includes(h));
+  const colIndex = headerRow.findIndex((h) =>
+    ACCOUNT_HEADER_VARIANTS.includes(h)
+  );
 
   if (colIndex === -1) {
-    const found = rows[0].map((h) => `"${h}"`).join(", ");
+    const found = rows[1].map((h) => `"${h}"`).join(", ");
     return {
       ok: false,
-      error: `No account number column found. Headers detected: ${found}. Expected "Account No" or "Account Number".`,
+      error: `No account number column found. Headers detected: ${found}. Expected "account_no".`,
     };
   }
 
+  // ── Data starts at row 2 (index 2)
   const accountNumbers = rows
-    .slice(1)
+    .slice(2)
     .map((row) => String(row[colIndex] ?? "").trim())
     .filter(Boolean);
 
   if (accountNumbers.length === 0) {
     return {
       ok: false,
-      error: "The account number column was found but contains no data.",
+      error: "The account_no column was found but contains no data.",
     };
   }
 

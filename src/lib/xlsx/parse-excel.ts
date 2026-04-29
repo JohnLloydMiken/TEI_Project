@@ -35,11 +35,12 @@ export interface ParseError {
 const HEADER_MAP: Record<string, keyof ParsedCustomerRow> = {
   "account no": "accountNo",
   "account number": "accountNo",
-  "account_no": "accountNo",
+  account_no: "accountNo", // ✅ real header
   accountno: "accountNo",
   accountnumber: "accountNo",
   "customer name": "customerName",
-  "customer_name": "customerName",
+  customer_name: "customerName",
+  "account name": "customerName", // ✅ real header ("Account Name")
   customername: "customerName",
   name: "customerName",
   address: "address",
@@ -49,11 +50,12 @@ const HEADER_MAP: Record<string, keyof ParsedCustomerRow> = {
   "phone number": "phone",
   phonenumber: "phone",
   "deposit amount": "depositAmount",
-  "deposit_amount": "depositAmount",
+  deposit_amount: "depositAmount",
   depositamount: "depositAmount",
   deposit: "depositAmount",
   "notification date": "notificationDate",
-  "notification_date": "notificationDate",
+  notification_date: "notificationDate",
+  "date received (mm/dd/yyyy)": "notificationDate", // ✅ real header
   notificationdate: "notificationDate",
   "notif date": "notificationDate",
   notifdate: "notificationDate",
@@ -62,19 +64,22 @@ const HEADER_MAP: Record<string, keyof ParsedCustomerRow> = {
 const REQUIRED_FIELDS: Array<keyof ParsedCustomerRow> = [
   "accountNo",
   "customerName",
-  "depositAmount",
   "notificationDate",
 ];
 
 export function parseCustomerExcel(
-  buffer: Buffer | ArrayBuffer
+  buffer: Buffer | ArrayBuffer,
 ): ParseResult | ParseError {
   let workbook: XLSX.WorkBook;
 
   try {
     workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
   } catch {
-    return { success: false, error: "Could not read the file. Make sure it is a valid .xlsx or .xls file." };
+    return {
+      success: false,
+      error:
+        "Could not read the file. Make sure it is a valid .xlsx or .xls file.",
+    };
   }
 
   const sheetName = workbook.SheetNames[0];
@@ -84,22 +89,37 @@ export function parseCustomerExcel(
 
   const sheet = workbook.Sheets[sheetName];
   // header: 1 → returns array of arrays (first row = headers)
-  const rawRows: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
-    header: 1,
-    defval: null,
-    blankrows: false,
-  });
 
-  if (rawRows.length < 2) {
-    return { success: false, error: "The file has no data rows (only a header or is completely empty)." };
+  const rawRows: unknown[][] = XLSX.utils.sheet_to_json(
+    sheet,
+
+    {
+      header: 1,
+      defval: null,
+      // blankrows defaults to true — all rows preserved
+    },
+  );
+  console.log("Row 0:", rawRows[0]);
+  console.log("Row 1:", rawRows[1]);
+  console.log("Row 2:", rawRows[2]);
+
+  if (rawRows.length < 3) {
+    // Need: title row + header row + at least 1 data row
+    return {
+      success: false,
+      error:
+        "The file has no data rows (only a header or is completely empty).",
+    };
   }
 
-  // --- Map header row ---
-  const headerRow = (rawRows[0] as unknown[]).map((h) =>
-    String(h ?? "")
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, " ")
+  // Row 0 is the report title — "CUSTOMER CONFIRMATION FORM..."
+  // Row 1 is the actual header row
+  const headerRow = (rawRows[1] as unknown[]).map(
+    (h) =>
+      String(h ?? "")
+        .toLowerCase()
+        .trim()
+        .replace(/[\s\u00A0\uFEFF]+/g, " "), // handles non-breaking spaces & BOM chars
   );
 
   const fieldIndexMap: Partial<Record<keyof ParsedCustomerRow, number>> = {};
@@ -126,12 +146,12 @@ export function parseCustomerExcel(
     }
   }
 
-  const dataRows = rawRows.slice(1);
+  const dataRows = rawRows.slice(2);
   const parsed: ParsedCustomerRow[] = [];
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i] as unknown[];
-    const excelRowNum = i + 2; // +1 for header, +1 for 1-based
+    const excelRowNum = i + 3; // +1 for header, +1 for 1-based
 
     const get = (field: keyof ParsedCustomerRow) => row[fieldIndexMap[field]!];
 
@@ -159,14 +179,9 @@ export function parseCustomerExcel(
 
     // Deposit Amount
     const rawDeposit = get("depositAmount");
-    const depositAmount = Number(rawDeposit);
-    if (rawDeposit == null || isNaN(depositAmount) || depositAmount < 0) {
-      return {
-        success: false,
-        error: `Row ${excelRowNum}: Invalid Deposit Amount "${rawDeposit}". Must be a non-negative number.`,
-        rowIndex: excelRowNum,
-      };
-    }
+    const depositAmount = rawDeposit != null ? Number(rawDeposit) : 0;
+    const resolvedDeposit =
+      isNaN(depositAmount) || depositAmount < 0 ? 0 : depositAmount;
 
     // Notification Date — SheetJS with cellDates:true returns JS Date objects
     const rawDate = get("notificationDate");
@@ -197,7 +212,8 @@ export function parseCustomerExcel(
 
     // Optional fields
     const rawAddress = get("address");
-    const address = rawAddress != null ? String(rawAddress).trim() || null : null;
+    const address =
+      rawAddress != null ? String(rawAddress).trim() || null : null;
 
     const rawEmail = get("email");
     const email = rawEmail != null ? String(rawEmail).trim() || null : null;
@@ -211,7 +227,7 @@ export function parseCustomerExcel(
       address,
       email,
       phone,
-      depositAmount,
+      depositAmount: resolvedDeposit,
       notificationDate,
     });
   }

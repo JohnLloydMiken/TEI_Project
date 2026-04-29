@@ -61,11 +61,16 @@ function parsePreviewFromBuffer(buffer: ArrayBuffer): PreviewRow[] | string {
 
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
-    header: 1, defval: null, blankrows: false,
+    header: 1,
+    defval: null,
+    // ✅ removed blankrows: false
   });
-  if (rows.length < 2) return "File is empty or has no data rows.";
 
-  const headerRow = (rows[0] as unknown[]).map((h) =>
+  // ✅ Need title row + header row + at least 1 data row
+  if (rows.length < 3) return "File is empty or has no data rows.";
+
+  // ✅ Row 0 is the report title — skip it, row 1 is the real header
+  const headerRow = (rows[1] as unknown[]).map((h) =>
     String(h ?? "").toLowerCase().trim().replace(/\s+/g, " ")
   );
 
@@ -78,28 +83,56 @@ function parsePreviewFromBuffer(buffer: ArrayBuffer): PreviewRow[] | string {
   };
 
   const colMap = {
-    accountNo:        idx(["account no","account number","accountno","account_no"]),
-    customerName:     idx(["customer name","customername","customer_name","name"]),
-    address:          idx(["address"]),
-    email:            idx(["email","email address","email_address"]),
-    phone:            idx(["phone","phone number","phone_number"]),
-    depositAmount:    idx(["deposit amount","depositamount","deposit_amount","deposit"]),
-    notificationDate: idx(["notification date","notificationdate","notification_date","notif date"]),
+    accountNo: idx([
+      "account_no",         // ✅ real header
+      "account no",
+      "account number",
+      "accountno",
+    ]),
+    customerName: idx([
+      "account name",       // ✅ real header
+      "customer name",
+      "customer_name",
+      "customername",
+      "name",
+    ]),
+    address:      idx(["address"]),
+    email:        idx(["email", "email address", "email_address"]),
+    phone:        idx(["phone", "phone number", "phone_number"]),
+    depositAmount: idx([
+      "deposit amount",
+      "depositamount",
+      "deposit_amount",
+      "deposit",
+    ]),
+    notificationDate: idx([
+      "date received (mm/dd/yyyy)",  // ✅ real header
+      "notification date",
+      "notificationdate",
+      "notification_date",
+      "notif date",
+    ]),
   };
 
+  // Only accountNo, customerName, notificationDate are required now
   const requiredKeys: Array<keyof typeof colMap> = [
-    "accountNo","customerName","depositAmount","notificationDate",
+    "accountNo",
+    "customerName",
+    "notificationDate",
   ];
   const requiredLabels: Record<string, string> = {
-    accountNo: "account_no", customerName: "customer_name",
-    depositAmount: "deposit_amount", notificationDate: "notification_date",
+    accountNo:        "account_no",
+    customerName:     "account name",
+    notificationDate: "date received (mm/dd/yyyy)",
   };
   for (const key of requiredKeys) {
     if (colMap[key] === -1)
       return `Missing required column: "${requiredLabels[key]}". Check your Excel headers.`;
   }
 
-  const dataRows = rows.slice(1) as unknown[][];
+  // ✅ Data starts at row 2 now
+  const dataRows = rows.slice(2) as unknown[][];
+
   return dataRows.map((row) => {
     const get = (i: number) => (i !== -1 ? row[i] : null);
     const rawDate = get(colMap.notificationDate);
@@ -108,16 +141,23 @@ function parsePreviewFromBuffer(buffer: ArrayBuffer): PreviewRow[] | string {
       dateStr = rawDate.toLocaleDateString("en-PH", {
         year: "numeric", month: "short", day: "numeric",
       });
+    } else if (typeof rawDate === "number") {
+      // ✅ handle serial date in preview too
+      const d = XLSX.SSF.parse_date_code(rawDate);
+      dateStr = new Date(d.y, d.m - 1, d.d).toLocaleDateString("en-PH", {
+        year: "numeric", month: "short", day: "numeric",
+      });
     } else if (rawDate != null) {
       dateStr = String(rawDate);
     }
+
     return {
-      accountNo:        String(get(colMap.accountNo) ?? "").trim(),
-      customerName:     String(get(colMap.customerName) ?? "").trim(),
-      address:          get(colMap.address) != null ? String(get(colMap.address)).trim() || null : null,
-      email:            get(colMap.email) != null ? String(get(colMap.email)).trim() || null : null,
-      phone:            get(colMap.phone) != null ? String(get(colMap.phone)).trim() || null : null,
-      depositAmount:    get(colMap.depositAmount) != null
+      accountNo:     String(get(colMap.accountNo) ?? "").trim(),
+      customerName:  String(get(colMap.customerName) ?? "").trim(),
+      address:       get(colMap.address) != null ? String(get(colMap.address)).trim() || null : null,
+      email:         get(colMap.email) != null ? String(get(colMap.email)).trim() || null : null,
+      phone:         get(colMap.phone) != null ? String(get(colMap.phone)).trim() || null : null,
+      depositAmount: get(colMap.depositAmount) != null
         ? Number(get(colMap.depositAmount)).toLocaleString("en-PH", {
             style: "currency", currency: "PHP",
           })

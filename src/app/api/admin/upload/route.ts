@@ -23,14 +23,20 @@ export const runtime = "nodejs"; // Required for Buffer + SheetJS
 
 export async function POST(req: NextRequest) {
   // ── 1. Auth guard ──────────────────────────────────────────────────────────
-  
+ console.log("🔥 upload route hit"); 
   const session = await getServerSession(authOptions);
- 
+
   if (!session) {
-    return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
+    return NextResponse.json(
+      { error: "You must be logged in." },
+      { status: 401 },
+    );
   }
   if (session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Admin access required." },
+      { status: 403 },
+    );
   }
 
   // ── 2. Parse form data ─────────────────────────────────────────────────────
@@ -49,27 +55,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file provided." }, { status: 400 });
   }
   if (!monthRaw || !yearRaw) {
-    return NextResponse.json({ error: "Month and year are required." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Month and year are required." },
+      { status: 400 },
+    );
   }
 
   const month = parseInt(monthRaw, 10);
   const year = parseInt(yearRaw, 10);
 
   if (isNaN(month) || month < 1 || month > 12) {
-    return NextResponse.json({ error: "Month must be between 1 and 12." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Month must be between 1 and 12." },
+      { status: 400 },
+    );
   }
   if (isNaN(year) || year < 2000 || year > 2100) {
-    return NextResponse.json({ error: "Year is out of range." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Year is out of range." },
+      { status: 400 },
+    );
   }
 
   const allowedTypes = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
   ];
+  console.log("file.type:", file.type);
+  console.log("file.name:", file.name);
+  console.log("file size:", file.size);
   if (!allowedTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
     return NextResponse.json(
       { error: "Only .xlsx or .xls files are accepted." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -81,13 +99,16 @@ export async function POST(req: NextRequest) {
   if (!parseResult.success) {
     return NextResponse.json(
       { error: parseResult.error, rowIndex: parseResult.rowIndex ?? null },
-      { status: 422 }
+      { status: 422 },
     );
   }
 
   const { rows } = parseResult;
   if (rows.length === 0) {
-    return NextResponse.json({ error: "The file contains no customer rows." }, { status: 422 });
+    return NextResponse.json(
+      { error: "The file contains no customer rows." },
+      { status: 422 },
+    );
   }
 
   const adminId = parseInt(session.user.id as string, 10);
@@ -131,7 +152,11 @@ export async function POST(req: NextRequest) {
         })),
       });
 
-      return { batchId: batch.id, totalInserted: rows.length, replaced: !!existing };
+      return {
+        batchId: batch.id,
+        totalInserted: rows.length,
+        replaced: !!existing,
+      };
     });
 
     return NextResponse.json({
@@ -154,14 +179,17 @@ export async function POST(req: NextRequest) {
       (err as { code: string }).code === "P2002"
     ) {
       return NextResponse.json(
-        { error: "Duplicate account number detected during database write. Upload aborted." },
-        { status: 409 }
+        {
+          error:
+            "Duplicate account number detected during database write. Upload aborted.",
+        },
+        { status: 409 },
       );
     }
 
     return NextResponse.json(
       { error: "An unexpected server error occurred. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
