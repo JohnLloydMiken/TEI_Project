@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Eligible" | "Expired" | "Claimed";
+  status: "Eligible" | "Expired" | "Returned";
 };
 interface BatchList {
   customers: Customer[];
@@ -32,12 +32,12 @@ const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
     Eligible: "bg-green-50 text-green-600 border border-green-200",
     Expired: "bg-red-50 text-red-500 border border-red-200",
-    Claimed: "bg-blue-50 text-blue-600 border border-blue-200",
+    Returned: "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
     Eligible: "bg-green-500",
     Expired: "bg-red-500",
-    Claimed: "bg-blue-500",
+    Returned: "bg-blue-500",
   };
 
   return (
@@ -98,9 +98,9 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "Claimed" && "Already Claimed"}
+          {status === "Returned" && "Already Returned"}
           {status === "Expired" && "Eligibility Expired"}
-          {status === "Eligible" && "Mark as Claimed"}
+          {status === "Eligible" && "Mark as Returned"}
         </>
       )}
     </motion.button>
@@ -118,7 +118,7 @@ export default function CustomerTable({
       ? new Date(d).toLocaleDateString("en-PH", {
           month: "short",
           day: "numeric",
-          year: "numeric",
+          year: "numeric",  
         })
       : "—";
 

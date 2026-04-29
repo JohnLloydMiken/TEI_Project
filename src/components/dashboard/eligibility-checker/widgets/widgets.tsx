@@ -64,7 +64,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
             </li>
             <li className="px-3 py-1 bg-blue-100 border border-blue-400 rounded text-center">
               <span className="text-[10px] font-bold text-blue-800 uppercase">
-                Claimed
+                Returned
               </span>
             </li>
            
