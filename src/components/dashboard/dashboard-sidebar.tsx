@@ -45,7 +45,7 @@ import { Playwrite_NO } from "next/font/google";
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="px-6 py-4  border-b border-white/20 flex items-center justify-between z-50"
+          className="px-6 py-4  border-b border-white/20 flex items-center justify-between z-50 overflow-hidden "
         >
           <div>
             <h1 className={`font-[PlaywriteNorge] text-4xl outline-none font-bold text-teiorange`}>tei.</h1>

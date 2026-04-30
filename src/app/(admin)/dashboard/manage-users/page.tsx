@@ -4,14 +4,11 @@ import { UserRoundPlus } from "lucide-react";
 import CSDWidgets from "@/components/dashboard/admin/manage-users/widget";
 import CreateUserModal from "@/components/dashboard/admin/manage-users/create-user-modal";
 import { useState } from "react";
-
+import { useCreateNewUser } from "@/services/useCreateNewUser";
+import CSDUserTable from "@/components/dashboard/admin/manage-users/user-table";
 export default function ManageUsers() {
   const [isActive, setActive] = useState(false);
-
-  const handleCreateUser = async (data: { fullName: string; email: string; password: string }) => {
-    // TODO: wire up your Prisma/API call here
-    console.log("Creating user:", data);
-  };
+  const { isLoading, error, success, handleCreateUser } = useCreateNewUser();
 
   return (
     <div className="w-full flex flex-col gap-3 relative">
@@ -47,8 +44,10 @@ export default function ManageUsers() {
         onClose={() => setActive(false)}
         onSubmit={handleCreateUser}
       />
-
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       <CSDWidgets CSDUser={5} />
+
+      <CSDUserTable/>
     </div>
   );
 }

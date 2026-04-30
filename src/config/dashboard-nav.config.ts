@@ -21,13 +21,13 @@ export const adminNav = [
     content: [
       {
         label: "Returned List",
-        href: "/dashboard/returned-list",
+        href: "/reports/returned-list",
         Icon: "file-text",
       },
 
       {
         label: "Export Data",
-        href: "/dashboard/admin_dashboard/export_data",
+        href: "/reports/export-data",
         Icon: "arrow-down",
       },
     ] satisfies SidebarContent[],
@@ -55,14 +55,15 @@ export const csdNav = [
     title: "Reports",
     content: [
       {
-        label: "Retured List",
-        href: "/dashboard/user_dashboard/claimed_list",
-        Icon: "arrow-down",
+        label: "Returned List",
+        href: "/reports/returned-list",
+        Icon: "file-text",
       },
+
       {
-        label: "Export Records",
-        href: "/dashboard/user_dashboard/export_records",
-        Icon: "folder-up",
+        label: "Export Data",
+        href: "/reports/export-data",
+        Icon: "arrow-down",
       },
     ] satisfies SidebarContent[],
   },
