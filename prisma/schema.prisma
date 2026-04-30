@@ -1,53 +1,55 @@
-  generator client {
-    provider = "prisma-client"
-    output   = "../src/generated/prisma"
-  }
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
 
-  datasource db {
-    provider = "sqlserver"
-    schemas  = ["dbo"]
-  }
+datasource db {
+  provider = "sqlserver"
+  schemas  = ["dbo"]
+}
 
-  model Customer {
-    id               Int         @id @default(autoincrement())
-    accountNo        String
-    customerName     String
-    address          String?
-    email            String?
-    phone            String?
-    depositAmount    Decimal
-    notificationDate DateTime
-    claimedAt        DateTime?
-    claimedBy        Int?
-    batchId          Int
-    batch            UploadBatch @relation(fields: [batchId], references: [id])
+model Customer {
+  id               Int         @id @default(autoincrement())
+  accountNo        String
+  customerName     String
+  address          String?
+  email            String?
+  phone            String?
+  depositAmount    Decimal
+  notificationDate DateTime
+  claimedAt        DateTime?
+  claimedBy        Int?
+  batchId          Int
+  batch            UploadBatch @relation(fields: [batchId], references: [id])
+  claimedUser      User?       @relation("ClaimedBy", fields: [claimedBy], references: [id]) // 👈 add this
 
-    @@unique([accountNo, batchId])
-    @@map("Customer")
-    @@schema("dbo")
-  }
+  @@unique([accountNo, batchId])
+  @@map("Customer")
+  @@schema("dbo")
+}
 
-  model UploadBatch {
-    id         Int        @id @default(autoincrement())
-    fileName   String
-    uploadedBy Int
-    uploadedAt DateTime   @default(now())
-    month      Int
-    year       Int
-    customers  Customer[]
+model UploadBatch {
+  id         Int        @id @default(autoincrement())
+  fileName   String
+  uploadedBy Int
+  uploadedAt DateTime   @default(now())
+  month      Int
+  year       Int
+  customers  Customer[]
 
-    @@map("UploadBatch")
-    @@schema("dbo")
-  }
+  @@map("UploadBatch")
+  @@schema("dbo")
+}
 
-  model User {
-    id        Int      @id @default(autoincrement())
-    name      String
-    email     String   @unique
-    password  String
-    role      String   @default("CSD")
-    createdAt DateTime @default(now())
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  role      String     @default("CSD")
+  createdAt DateTime   @default(now())
+  claimed   Customer[] @relation("ClaimedBy")
 
-    @@map("User")
-    @@schema("dbo")
-  }
+  @@map("User")
+  @@schema("dbo")
+}
