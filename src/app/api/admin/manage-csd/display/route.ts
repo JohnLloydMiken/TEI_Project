@@ -9,6 +9,7 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        password: true,
         createdAt: true,
         _count: {
           select: { claimed: true },

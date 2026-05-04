@@ -29,7 +29,7 @@ export function useFetchBatches(): UseFetchBatchesResult {
       setError(null)
 
       try {
-        const res = await fetch("/api/reports/export-data")
+        const res = await fetch("/api/reports/export-data/upload-batch")
         const json = await res.json()
 
         if (!res.ok) {

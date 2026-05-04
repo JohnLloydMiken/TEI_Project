@@ -63,7 +63,7 @@ export default function ExportPage() {
     setExportError(null)
 
     try {
-      const res = await fetch(`/api/reports/export-data?batchId=${selectedBatch}&filter=${filter}`)
+      const res = await fetch(`/api/reports/export-data?batchId=${3}&filter=${filter}`)
 
       if (!res.ok) {
         const json = await res.json()
@@ -92,15 +92,8 @@ export default function ExportPage() {
   const error = batchError ?? exportError
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-800">Export Data</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Select a batch and download customer records as an Excel file.
-        </p>
-      </div>
-
+    <div className="w-full mx-auto py-10 px-4 space-y-8  bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)] rounded-lg">
+  
       {/* Batch Selector */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-700">Select Batch</label>
@@ -113,7 +106,7 @@ export default function ExportPage() {
           <select
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800
                        focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            value={selectedBatch ?? ""}
+            value={3}
             onChange={(e) => setSelectedBatch(Number(e.target.value))}
           >
             {batches.map((b) => (
@@ -180,7 +173,7 @@ export default function ExportPage() {
       )}
 
       {/* Note */}
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-400 text-center">
         Exported files include: Account No, Customer Name, Address, Email, Phone,
         Deposit Amount, Notification Date, Claimed At, Claimed By, and Status.
       </p>

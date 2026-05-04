@@ -40,7 +40,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="border border-gray-200 w-3/12 rounded-2xl overflow-hidden shadow-sm z-10">
+    <div className="border border-gray-200 w-11/12 md:w-5/12 lg:w-3/12 rounded-2xl overflow-hidden shadow-sm z-10">
       {/* Header */}
       <div className="w-full px-6 py-5 bg-teiblue">
         <p className="text-white text-xl font-semibold tracking-wide">
