@@ -48,7 +48,6 @@ const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   );
 };
 
-
 // Replace ActionButton with this:
 const ActionButton = ({
   status,
@@ -80,7 +79,8 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "BD Retained" && "Already Returned"}
+          {status === "BD Retained" && "Revoke BD Retain"}
+  
           {status === "Pending" && "Mark as Returned"}
         </>
       )}
@@ -88,7 +88,7 @@ const ActionButton = ({
   );
 };
 
-export default function CustomerTable({
+export default function ReturnedTable({
   customers,
   onRemove,
   onClaim, // ← new
@@ -102,7 +102,13 @@ export default function CustomerTable({
           year: "numeric",  
         })
       : "—";
-
+ if (customers.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+        <p className="text-sm">No unmatched accounts</p>
+      </div>
+    );
+  }
   return (
     <motion.div className="overflow-x-auto py-3 px-3">
       <table className="w-full text-sm text-left">
@@ -142,7 +148,7 @@ export default function CustomerTable({
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
               </td>
-             
+          
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
                   <ActionButton

@@ -3,7 +3,7 @@ export interface DashboardHeaderProps{
     name: string | null | undefined,
     role: string | null | undefined,
 }
-export type IconKey = "search" | "file-text" | "arrow-down" | "folder-up";
+export type IconKey = "search" | "file-text" | "arrow-down" | "folder-up" | "layout-dashboard";
 
 export interface SidebarContent {
   label: string;

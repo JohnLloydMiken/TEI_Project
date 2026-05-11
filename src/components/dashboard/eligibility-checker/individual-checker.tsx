@@ -121,9 +121,6 @@ async function handleClaim() {
           <CustomerCard
             accountName={customer?.customerName}
             accountNumber={customer?.accountNo}
-            notifiedDate={customer?.notificationDate ?? null}
-            deadlineDate={customer?.deadlineDate ?? null}
-            daysRemaining={customer?.daysRemaining ?? null}
             depositAmount={customer?.depositAmount ?? null}
             status={customer?.status ?? null}
             onClear={handleClear}

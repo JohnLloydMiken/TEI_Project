@@ -4,7 +4,7 @@ export interface DeadlineInfo {
   deadlineDate: string;    // ISO string — safe to serialize over the wire
   daysRemaining: number;   // 0 if expired
   isExpired: boolean;
-  status: "Eligible" | "Expired" | "Claimed";
+  status: "Pending" | "Expired" | "Retained";
 }
 
 export function computeDeadline(
@@ -25,16 +25,16 @@ export function computeDeadline(
   const isExpired = startOfNow > startOfDeadline;
 
   // Status priority logic
-  let status: "Eligible" | "Expired" | "Claimed" = "Eligible";
+  let status: "Pending" | "Expired" | "Retained" = "Pending";
   if (claimedAt) {
-    status = "Claimed";
+    status = "Retained";
   } else if (isExpired) {
     status = "Expired";
   }
 
   return {
     deadlineDate: deadline.toISOString(),
-    daysRemaining: status === "Claimed" ? 0 : daysRemaining,
+    daysRemaining: status === "Retained" ? 0 : daysRemaining,
     isExpired: status === "Expired", // Only true if NOT claimed and past date
     status,
   };

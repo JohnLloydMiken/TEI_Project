@@ -17,7 +17,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Eligible" | "Expired" | "Claimed";
+  status: "Pending"  | "BD Retained";
 };
 interface BatchResult {
   found: Customer[];

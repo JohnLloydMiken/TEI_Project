@@ -7,6 +7,7 @@ interface CSDUser {
   name: string
   email: string
   createdAt: string
+  password: string
   claimsProcessed: number
 }
 

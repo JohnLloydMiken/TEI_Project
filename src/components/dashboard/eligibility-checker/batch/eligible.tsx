@@ -1,8 +1,8 @@
 // components/dashboard/eligibility-checker/batch/customer-table.tsx
 "use client";
 import { motion } from "motion/react";
-import { toast } from "sonner";
-import { Clock, Loader2, } from "lucide-react"; // ← add Loader2
+
+import { Clock, Loader2 } from "lucide-react"; // ← add Loader2
 interface BatchList {
   customers: Customer[];
   onRemove: (id: number) => void; // ← new
@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Pending" | "BD Retained";
+  status: "Pending"  | "BD Retained";
 };
 interface BatchList {
   customers: Customer[];
@@ -30,11 +30,11 @@ interface BatchList {
 
 const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
-    "Pending": "bg-green-50 text-green-600 border border-green-200",
+    "Pending": "bg-yellow-50 text-yellow-600 border border-yellow-200",
     "BD Retained": "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
-    "Pending": "bg-green-500",
+    "Pending": "bg-yellow-500",
     "BD Retained": "bg-blue-500",
   };
 
@@ -81,14 +81,14 @@ const ActionButton = ({
       ) : (
         <>
           {status === "BD Retained" && "Already Returned"}
-          {status === "Pending" && "Mark as Returned"}
+          {status === "Pending" && "Mark as BD Retained"}
         </>
       )}
     </motion.button>
   );
 };
 
-export default function CustomerTable({
+export default function EligibleTable({
   customers,
   onRemove,
   onClaim, // ← new
@@ -99,7 +99,7 @@ export default function CustomerTable({
       ? new Date(d).toLocaleDateString("en-PH", {
           month: "short",
           day: "numeric",
-          year: "numeric",  
+          year: "numeric",
         })
       : "—";
 
@@ -108,12 +108,7 @@ export default function CustomerTable({
       <table className="w-full text-sm text-left">
         <thead>
           <tr className="bg-[#f0f4f9]">
-            {[
-              "Account Number",
-              "Account Name",
-              "Status",
-              "Action",
-            ].map((h) => (
+            {["Account Number", "Account Name", "Status", "Action"].map((h) => (
               <th
                 key={h}
                 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-4 py-3 whitespace-nowrap"
@@ -142,7 +137,6 @@ export default function CustomerTable({
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
               </td>
-             
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
                   <ActionButton

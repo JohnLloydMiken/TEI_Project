@@ -9,7 +9,9 @@ import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
+import EligibleTable from "./batch/eligible";
+import ReturnedTable from "./batch/returned";
+import ExpiredTable from "./batch/expired";
 interface BatchPasteUploadProps {
   results: ReturnType<typeof useBatchCustomerFetch>["results"];
   loading: boolean;
@@ -21,7 +23,7 @@ interface BatchPasteUploadProps {
   claimingIds: Set<number>;
 }
 
-type ViewTab = "found" | "notFound";
+type ViewTab = "found" | "notFound" | "pending" | "retained";
 
 export default function BatchUpload({
   results,
@@ -49,9 +51,27 @@ export default function BatchUpload({
   const foundCount = results?.found?.length ?? 0;
   const notFoundCount = results?.notFound?.length ?? 0;
 
+  const retained = results?.found
+    .map((c) => c.status)
+    .filter((customer) => customer === "BD Retained");
+  const eligible = results?.found
+    .map((c) => c.status)
+    .filter((customer) => customer === "Pending");
+
+  const eligible_customers = results?.found.filter(
+    (customer) => customer.status === "Pending",
+  );
+ ;
+
+  const returned_customers = results?.found.filter(
+    (customer) => customer.status === "BD Retained",
+  );
   const viewTabs: { key: ViewTab; label: string; count: number }[] = [
     { key: "found", label: "Found", count: foundCount },
     { key: "notFound", label: "Not Found", count: notFoundCount },
+    { key: "pending", label: "Pending", count: eligible?.length || 0 },
+    { key: "retained", label: "Retained", count: retained?.length || 0 },
+  
   ];
 
   // Reset to "found" tab whenever a new result arrives
@@ -63,6 +83,40 @@ export default function BatchUpload({
     fetchBatch(accountNumbers);
   };
 
+  const view_table = (view: string) => {
+    switch (view) {
+      case "found":
+        return (
+          <CustomerTable
+            customers={results?.found ?? []}
+            onRemove={onRemove}
+            onClaim={onClaim} // ← add
+            claimingIds={claimingIds} // ← add
+          />
+        );
+      case "pending":
+        return (
+          <EligibleTable
+            customers={eligible_customers ?? []}
+            onRemove={onRemove}
+            onClaim={onClaim} // ← add
+            claimingIds={claimingIds}
+          />
+        );
+      case "retained":
+         return (
+          <ReturnedTable
+            customers={returned_customers ?? []}
+            onRemove={onRemove}
+            onClaim={onClaim} // ← add
+            claimingIds={claimingIds}
+          />
+        );
+      case "notFound":
+        return <NotFoundTable accountNumbers={results?.notFound ?? []} />;
+      default: <p>No result found</p>
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -201,22 +255,7 @@ export default function BatchUpload({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
               >
-                {activeView === "found" ? (
-                  results.found.length > 0 ? (
-                    <CustomerTable
-                      customers={results?.found ?? []}
-                      onRemove={onRemove}
-                      onClaim={onClaim} // ← add
-                      claimingIds={claimingIds} // ← add
-                    />
-                  ) : (
-                    <p className="px-6 py-10 text-center text-sm text-gray-400">
-                      No matching accounts found in the database.
-                    </p>
-                  )
-                ) : (
-                  <NotFoundTable accountNumbers={results.notFound ?? []} />
-                )}
+                {view_table(activeView)}
               </motion.div>
             </AnimatePresence>
           </motion.div>

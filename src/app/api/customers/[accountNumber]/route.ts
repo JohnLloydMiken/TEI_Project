@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{accountNumber: string}> }
 ) {
   const { accountNumber } = await params;
-
+  let status: "Pending" | "BD Retained" = "Pending"
   if (!accountNumber?.trim()) {
     return NextResponse.json(
       { error: "Account number is required" },
@@ -38,26 +38,21 @@ export async function GET(
     });
 
     if (!customer) {
+       status = "Pending";
       return NextResponse.json(
         { error: "Customer not found" },
         { status: 404 }
+       
       );
+      
     }
 
-    // All deadline logic lives here — never on the client
-    const deadlineInfo = computeDeadline(
-      customer.notificationDate,
-      customer.claimedAt ? new Date(customer.claimedAt) : null
-    );
+   
 
     return NextResponse.json({
       data: {
         ...customer,
-        // Enrich the response with computed deadline fields
-        deadlineDate:   deadlineInfo.deadlineDate,
-        daysRemaining:  deadlineInfo.daysRemaining,
-        isExpired:      deadlineInfo.isExpired,
-        status:         deadlineInfo.status,
+        status: "BD Retained"
       },
     });
 

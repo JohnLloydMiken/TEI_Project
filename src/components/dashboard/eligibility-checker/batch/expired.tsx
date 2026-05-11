@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Pending" | "BD Retained";
+  status: "Pending" | "Expired" | "Retained";
 };
 interface BatchList {
   customers: Customer[];
@@ -30,12 +30,14 @@ interface BatchList {
 
 const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
-    "Pending": "bg-green-50 text-green-600 border border-green-200",
-    "BD Retained": "bg-blue-50 text-blue-600 border border-blue-200",
+    Pending: "bg-green-50 text-green-600 border border-green-200",
+    Expired: "bg-red-50 text-red-500 border border-red-200",
+    Retained: "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
-    "Pending": "bg-green-500",
-    "BD Retained": "bg-blue-500",
+    Pending: "bg-green-500",
+    Expired: "bg-red-500",
+    Retained: "bg-blue-500",
   };
 
   return (
@@ -47,7 +49,23 @@ const StatusBadge = ({ status }: { status: Customer["status"] }) => {
     </span>
   );
 };
-
+const DaysChip = ({
+  days,
+  status,
+}: {
+  days: number;
+  status: Customer["status"];
+}) => {
+  if (status === "Expired" || days === 0) {
+    return <span className="text-sm font-semibold text-gray-400">0 days</span>;
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
+      <Clock className="w-3.5 h-3.5" />
+      {days} days
+    </span>
+  );
+};
 
 // Replace ActionButton with this:
 const ActionButton = ({
@@ -80,7 +98,8 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "BD Retained" && "Already Returned"}
+          {status === "Retained" && "Already Returned"}
+          {status === "Expired" && "Eligibility Expired"}
           {status === "Pending" && "Mark as Returned"}
         </>
       )}
@@ -88,7 +107,7 @@ const ActionButton = ({
   );
 };
 
-export default function CustomerTable({
+export default function ExpiredTable({
   customers,
   onRemove,
   onClaim, // ← new
@@ -102,7 +121,13 @@ export default function CustomerTable({
           year: "numeric",  
         })
       : "—";
-
+ if (customers.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+        <p className="text-sm">No unmatched accounts</p>
+      </div>
+    );
+  }
   return (
     <motion.div className="overflow-x-auto py-3 px-3">
       <table className="w-full text-sm text-left">
@@ -142,7 +167,6 @@ export default function CustomerTable({
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
               </td>
-             
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
                   <ActionButton
