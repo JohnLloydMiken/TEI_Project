@@ -1,12 +1,12 @@
 // src/app/api/customers/batch/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { computeDeadline } from "@/lib/deadlineLogic";
+
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { accountNumbers }: { accountNumbers: string[] } = body;
-
+  let status: "Pending" | "BD Retained";
   if (!Array.isArray(accountNumbers) || accountNumbers.length === 0) {
     return NextResponse.json(
       { error: "Account Numbers must be a non-empty array" },
@@ -47,17 +47,9 @@ export async function POST(req: NextRequest) {
 
     // Enrich found customers with deadline logic
     const enriched = customers.map((customer) => {
-      const deadlineInfo = computeDeadline(
-        customer.notificationDate,
-        customer.claimedAt ? new Date(customer.claimedAt) : null
-      );
-
       return {
-        ...customer,
-        deadlineDate:  deadlineInfo.deadlineDate,
-        daysRemaining: deadlineInfo.daysRemaining,
-        isExpired:     deadlineInfo.isExpired,
-        status:        deadlineInfo.status,
+        ...customer,        
+          status: "BD Retained"
       };
     });
 

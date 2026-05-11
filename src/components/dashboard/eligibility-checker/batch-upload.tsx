@@ -23,7 +23,7 @@ interface BatchPasteUploadProps {
   claimingIds: Set<number>;
 }
 
-type ViewTab = "found" | "notFound" | "expired" | "eligible" | "returned";
+type ViewTab = "found" | "notFound" | "pending" | "retained";
 
 export default function BatchUpload({
   results,
@@ -51,32 +51,27 @@ export default function BatchUpload({
   const foundCount = results?.found?.length ?? 0;
   const notFoundCount = results?.notFound?.length ?? 0;
 
-  const expired = results?.found
+  const retained = results?.found
     .map((c) => c.status)
-    .filter((customer) => customer === "Expired");
-  const returned = results?.found
-    .map((c) => c.status)
-    .filter((customer) => customer === "Returned");
+    .filter((customer) => customer === "BD Retained");
   const eligible = results?.found
     .map((c) => c.status)
-    .filter((customer) => customer === "Eligible");
+    .filter((customer) => customer === "Pending");
 
   const eligible_customers = results?.found.filter(
-    (customer) => customer.status === "Eligible",
+    (customer) => customer.status === "Pending",
   );
-  const expired_customers = results?.found.filter(
-    (customer) => customer.status === "Expired",
-  );
+ ;
 
   const returned_customers = results?.found.filter(
-    (customer) => customer.status === "Returned",
+    (customer) => customer.status === "BD Retained",
   );
   const viewTabs: { key: ViewTab; label: string; count: number }[] = [
     { key: "found", label: "Found", count: foundCount },
     { key: "notFound", label: "Not Found", count: notFoundCount },
-    { key: "eligible", label: "Eligible", count: eligible?.length || 0 },
-    { key: "returned", label: "Returned", count: returned?.length || 0 },
-    { key: "expired", label: "Expired", count: expired?.length || 0 },
+    { key: "pending", label: "Pending", count: eligible?.length || 0 },
+    { key: "retained", label: "Retained", count: retained?.length || 0 },
+  
   ];
 
   // Reset to "found" tab whenever a new result arrives
@@ -99,7 +94,7 @@ export default function BatchUpload({
             claimingIds={claimingIds} // ← add
           />
         );
-      case "eligible":
+      case "pending":
         return (
           <EligibleTable
             customers={eligible_customers ?? []}
@@ -108,19 +103,10 @@ export default function BatchUpload({
             claimingIds={claimingIds}
           />
         );
-      case "returned":
+      case "retained":
          return (
           <ReturnedTable
             customers={returned_customers ?? []}
-            onRemove={onRemove}
-            onClaim={onClaim} // ← add
-            claimingIds={claimingIds}
-          />
-        );
-      case "expired":
-        return (
-          <ExpiredTable
-            customers={expired_customers ?? []}
             onRemove={onRemove}
             onClaim={onClaim} // ← add
             claimingIds={claimingIds}

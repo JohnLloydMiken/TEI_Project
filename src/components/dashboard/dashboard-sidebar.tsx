@@ -12,6 +12,7 @@
     FileText,
     ArrowDownToLine,
     FolderUpIcon,
+    LayoutDashboard
   } from "lucide-react";
   import { signOut } from "next-auth/react";
 import type { IconKey } from "@/types/dashboard/dashboard-types";
@@ -23,6 +24,7 @@ import { Playwrite_NO } from "next/font/google";
   "file-text":  FileText,
   "arrow-down": ArrowDownToLine,
   "folder-up":  FolderUpIcon,
+  "layout-dashboard": LayoutDashboard
   
 };
   export default function DashboardSidebar({

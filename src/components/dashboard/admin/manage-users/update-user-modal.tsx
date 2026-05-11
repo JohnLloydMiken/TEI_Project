@@ -17,13 +17,13 @@ interface User{
 }
 
 export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: CreateUserModalProps) {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState(user?.name);
+  const [email, setEmail] = useState(user?.email);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const decodePass = bcrypt.decodeBase64(user?.password ?? "", 12)
+  
   const handleSubmit = async () => {
     if (!fullName || !email || !password) return;
     setIsLoading(true);
@@ -111,26 +111,10 @@ export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: Cre
                   />
                 </div>
 
-                {/* Password */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-gray-700">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder= {decodePass.toString()}
-                      className="w-full px-3 py-2.5 pr-10 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder-gray-300 outline-none focus:border-tei-blue focus:ring-2 focus:ring-tei-blue/10 transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
+            
+
+               
+
               </div>
 
               {/* Actions */}
@@ -150,7 +134,7 @@ export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: Cre
                   disabled={!fullName || !email || !password || isLoading}
                   className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-tei-blue hover:bg-tei-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
                 >
-                  {isLoading ? "Creating..." : "Create User"}
+                  {isLoading ? "Creating..." : "Update User"}
                 </motion.button>
               </div>
             </div>

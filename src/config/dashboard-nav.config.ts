@@ -1,6 +1,16 @@
 import type { SidebarContent } from "@/types/dashboard/dashboard-types";
 
 export const adminNav = [
+    {
+    title: "General",
+    content: [
+      {
+        label: "Overview",
+        href: "/overview",
+        Icon: "layout-dashboard",
+      },
+    ] satisfies SidebarContent[],
+  },
   {
     title: "Management",
     content: [
@@ -17,8 +27,10 @@ export const adminNav = [
     ] satisfies SidebarContent[],
   },
   {
+    
     title: "Reports",
     content: [
+      
       {
         label: "Returned List",
         href: "/reports/returned-list",
@@ -35,6 +47,16 @@ export const adminNav = [
 ];
 
 export const csdNav = [
+   {
+    title: "General",
+    content: [
+      {
+        label: "Overview",
+        href: "/overview",
+        Icon: "layout-dashboard",
+      },
+    ] satisfies SidebarContent[],
+  },
   {
     title: "Checker",
     content: [

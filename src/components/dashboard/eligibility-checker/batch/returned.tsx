@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Eligible" | "Expired" | "Returned";
+  status: "Pending" | "BD Retained";
 };
 interface BatchList {
   customers: Customer[];
@@ -30,14 +30,12 @@ interface BatchList {
 
 const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
-    Eligible: "bg-green-50 text-green-600 border border-green-200",
-    Expired: "bg-red-50 text-red-500 border border-red-200",
-    Returned: "bg-blue-50 text-blue-600 border border-blue-200",
+    "Pending": "bg-green-50 text-green-600 border border-green-200",
+    "BD Retained": "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
-    Eligible: "bg-green-500",
-    Expired: "bg-red-500",
-    Returned: "bg-blue-500",
+    "Pending": "bg-green-500",
+    "BD Retained": "bg-blue-500",
   };
 
   return (
@@ -46,23 +44,6 @@ const StatusBadge = ({ status }: { status: Customer["status"] }) => {
     >
       <span className={`w-1.5 h-1.5 rounded-full ${dotColor[status]}`} />
       {status}
-    </span>
-  );
-};
-const DaysChip = ({
-  days,
-  status,
-}: {
-  days: number;
-  status: Customer["status"];
-}) => {
-  if (status === "Expired" || days === 0) {
-    return <span className="text-sm font-semibold text-gray-400">0 days</span>;
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
-      <Clock className="w-3.5 h-3.5" />
-      {days} days
     </span>
   );
 };
@@ -77,7 +58,7 @@ const ActionButton = ({
   isClaiming: boolean;
   onClick: () => void;
 }) => {
-  const isActive = status === "Eligible" && !isClaiming;
+  const isActive = status === "Pending" && !isClaiming;
   return (
     <motion.button
       whileTap={{ scale: 0.96 }}
@@ -98,9 +79,9 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "Returned" && "Already Returned"}
-          {status === "Expired" && "Eligibility Expired"}
-          {status === "Eligible" && "Mark as Returned"}
+          {status === "BD Retained" && "Revoke BD Retain"}
+  
+          {status === "Pending" && "Mark as Returned"}
         </>
       )}
     </motion.button>
@@ -137,9 +118,6 @@ export default function ReturnedTable({
               "Account Number",
               "Account Name",
               "Status",
-              "Notified Date",
-              "Days Remaining",
-              "Deadline Date",
               "Action",
             ].map((h) => (
               <th
@@ -170,19 +148,7 @@ export default function ReturnedTable({
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
               </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.notificationDate)}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <DaysChip days={c.daysRemaining} status={c.status} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.deadlineDate)}
-                </span>
-              </td>
+          
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
                   <ActionButton

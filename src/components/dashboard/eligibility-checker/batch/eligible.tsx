@@ -1,8 +1,8 @@
 // components/dashboard/eligibility-checker/batch/customer-table.tsx
 "use client";
 import { motion } from "motion/react";
-import { toast } from "sonner";
-import { Clock, Loader2, } from "lucide-react"; // ← add Loader2
+
+import { Clock, Loader2 } from "lucide-react"; // ← add Loader2
 interface BatchList {
   customers: Customer[];
   onRemove: (id: number) => void; // ← new
@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Eligible" | "Expired" | "Returned";
+  status: "Pending"  | "BD Retained";
 };
 interface BatchList {
   customers: Customer[];
@@ -30,14 +30,12 @@ interface BatchList {
 
 const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
-    Eligible: "bg-green-50 text-green-600 border border-green-200",
-    Expired: "bg-red-50 text-red-500 border border-red-200",
-    Returned: "bg-blue-50 text-blue-600 border border-blue-200",
+    "Pending": "bg-yellow-50 text-yellow-600 border border-yellow-200",
+    "BD Retained": "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
-    Eligible: "bg-green-500",
-    Expired: "bg-red-500",
-    Returned: "bg-blue-500",
+    "Pending": "bg-yellow-500",
+    "BD Retained": "bg-blue-500",
   };
 
   return (
@@ -49,23 +47,7 @@ const StatusBadge = ({ status }: { status: Customer["status"] }) => {
     </span>
   );
 };
-const DaysChip = ({
-  days,
-  status,
-}: {
-  days: number;
-  status: Customer["status"];
-}) => {
-  if (status === "Expired" || days === 0) {
-    return <span className="text-sm font-semibold text-gray-400">0 days</span>;
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
-      <Clock className="w-3.5 h-3.5" />
-      {days} days
-    </span>
-  );
-};
+
 
 // Replace ActionButton with this:
 const ActionButton = ({
@@ -77,7 +59,7 @@ const ActionButton = ({
   isClaiming: boolean;
   onClick: () => void;
 }) => {
-  const isActive = status === "Eligible" && !isClaiming;
+  const isActive = status === "Pending" && !isClaiming;
   return (
     <motion.button
       whileTap={{ scale: 0.96 }}
@@ -98,9 +80,8 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "Returned" && "Already Returned"}
-          {status === "Expired" && "Eligibility Expired"}
-          {status === "Eligible" && "Mark as Returned"}
+          {status === "BD Retained" && "Already Returned"}
+          {status === "Pending" && "Mark as BD Retained"}
         </>
       )}
     </motion.button>
@@ -118,7 +99,7 @@ export default function EligibleTable({
       ? new Date(d).toLocaleDateString("en-PH", {
           month: "short",
           day: "numeric",
-          year: "numeric",  
+          year: "numeric",
         })
       : "—";
 
@@ -127,15 +108,7 @@ export default function EligibleTable({
       <table className="w-full text-sm text-left">
         <thead>
           <tr className="bg-[#f0f4f9]">
-            {[
-              "Account Number",
-              "Account Name",
-              "Status",
-              "Notified Date",
-              "Days Remaining",
-              "Deadline Date",
-              "Action",
-            ].map((h) => (
+            {["Account Number", "Account Name", "Status", "Action"].map((h) => (
               <th
                 key={h}
                 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-4 py-3 whitespace-nowrap"
@@ -163,19 +136,6 @@ export default function EligibleTable({
               </td>
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.notificationDate)}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <DaysChip days={c.daysRemaining} status={c.status} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.deadlineDate)}
-                </span>
               </td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">

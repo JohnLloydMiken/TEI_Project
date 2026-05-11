@@ -245,6 +245,6 @@ export function parseCustomerExcel(
     }
     seen.add(key);
   }
-
+0
   return { success: true, rows: parsed, totalRows: parsed.length };
 }

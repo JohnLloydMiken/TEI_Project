@@ -1,50 +1,27 @@
 import { motion } from "framer-motion"; // Changed to framer-motion standard
 import { CustomerCardProps } from "@/types/dashboard/customer-card";
 import { User, IdCard, Clock10, CheckCircle } from "lucide-react";
-import { div } from "motion/react-client";
-
-const STATUS_STYLES: Record<string, string> = {
-  Eligible: "bg-green-100 text-green-800",
-  NotFound: "bg-amber-100 text-amber-800",
-  Claimed: "bg-blue-100 text-blue-800",
-  Expired: "bg-red-100 text-red-800",
-};
 
 function getStatusStyle(status: string | null) {
-  if (!status) return "bg-gray-100 text-gray-600";
-  return STATUS_STYLES[status] ?? "bg-gray-100 text-gray-600";
+  if (status === "Pending"){
+     return "bg-yellow-100 text-yellow-800";
+  }else if (status === "BD Retained"){
+    return "bg-blue-100 text-blue-800"
+  }else{
+      return "bg-gray-100 text-gray-600";
+  }
+  
 }
 
 export default function CustomerCard({
   accountName,
   accountNumber,
-  notifiedDate,
-  deadlineDate,
-  daysRemaining, // Fixed spelling
-  depositAmount,
   status,
   claiming,
   onClaim,
   onClear,
 }: CustomerCardProps) {
-  const canClaim = status === "Eligible";
-  const totalDays = 30;
-  const elapsed = totalDays - Number(daysRemaining ?? 0);
-  const progressPct = Math.min(100, Math.max(0, (elapsed / totalDays) * 100));
-
-  const formatDate = (d: Date | string | null) =>
-    d
-      ? new Date(d).toLocaleDateString("en-PH", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "—";
-
-  const formatAmount = (a: number | string | null) =>
-    a !== null && a !== ""
-      ? `₱${Number(a).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`
-      : "—";
+  const canClaim = status === "Pending";
 
   return (
     <motion.div
@@ -84,57 +61,9 @@ export default function CustomerCard({
         </span>
       </div>
 
-      {/* Notified + Deposit */}
-      <div className="relative z-10 border-t border-gray-50 pt-4 pb-4 flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-gray-400">Notified on</p>
-          <p className="text-[14px] font-medium text-gray-900 mt-0.5">
-            {formatDate(notifiedDate)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[11px] text-gray-400">Deposit Amount</p>
-          <p className="text-xl font-bold text-gray-900 tracking-tight">
-            {formatAmount(depositAmount)}
-          </p>
-        </div>
-      </div>
+   
 
-      {/* Timeline */}
-      <div className="relative z-10 border-t border-gray-50 pt-4 mb-5">
-        <div className="flex items-center gap-1.5 mb-3">
-          <Clock10 size={14} className="text-gray-400" />
-          <span className="text-xs font-medium text-gray-500">Timeline</span>
-        </div>
-
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-gray-400">Notified</span>
-          <div className="flex flex-col items-center">
-            <span className="text-2xl font-bold text-gray-900 leading-none">
-              {daysRemaining ?? 0}
-            </span>
-            <span className="text-[10px] font-medium text-gray-400 uppercase">
-              Days Left
-            </span>
-          </div>
-          <span className="text-[11px] text-gray-400">Deadline</span>
-        </div>
-
-        {/* Animated progress bar */}
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-          <motion.div
-            initial={{ width: "0%" }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: 1, ease: "circOut", delay: 0.2 }}
-            className="h-full rounded-full bg-linear-to-r from-blue-500 to-red-400"
-          />
-        </div>
-
-        <div className="flex justify-between text-[11px] font-medium text-gray-500">
-          <span>{formatDate(notifiedDate)}</span>
-          <span>{formatDate(deadlineDate)}</span>
-        </div>
-      </div>
+    
 
       {/* Actions */}
       <div className="relative z-10 flex gap-2">
@@ -150,9 +79,9 @@ export default function CustomerCard({
         >
           <CheckCircle size={15} />
           {claiming && "Claiming..."}
-          {!claiming && status === "Claimed" && "Already Claimed"}
+          {!claiming && status === "BD Retained" && "Customer BD Retained"}
           {!claiming && status === "Expired" && "Eligibility Expired"}
-          {!claiming && status === "Eligible" && "Mark as Claimed"}
+          {!claiming && status === "Eligible" && "Mark as BD Retained"}
           {!claiming && !status && "Mark as Claimed"}
         </button>
         <button

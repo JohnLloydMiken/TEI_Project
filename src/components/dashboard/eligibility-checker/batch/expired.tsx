@@ -19,7 +19,7 @@ type Customer = {
   deadlineDate: string;
   daysRemaining: number;
   isExpired: Boolean;
-  status: "Eligible" | "Expired" | "Returned";
+  status: "Pending" | "Expired" | "Retained";
 };
 interface BatchList {
   customers: Customer[];
@@ -30,14 +30,14 @@ interface BatchList {
 
 const StatusBadge = ({ status }: { status: Customer["status"] }) => {
   const styles = {
-    Eligible: "bg-green-50 text-green-600 border border-green-200",
+    Pending: "bg-green-50 text-green-600 border border-green-200",
     Expired: "bg-red-50 text-red-500 border border-red-200",
-    Returned: "bg-blue-50 text-blue-600 border border-blue-200",
+    Retained: "bg-blue-50 text-blue-600 border border-blue-200",
   };
   const dotColor = {
-    Eligible: "bg-green-500",
+    Pending: "bg-green-500",
     Expired: "bg-red-500",
-    Returned: "bg-blue-500",
+    Retained: "bg-blue-500",
   };
 
   return (
@@ -77,7 +77,7 @@ const ActionButton = ({
   isClaiming: boolean;
   onClick: () => void;
 }) => {
-  const isActive = status === "Eligible" && !isClaiming;
+  const isActive = status === "Pending" && !isClaiming;
   return (
     <motion.button
       whileTap={{ scale: 0.96 }}
@@ -98,9 +98,9 @@ const ActionButton = ({
         </>
       ) : (
         <>
-          {status === "Returned" && "Already Returned"}
+          {status === "Retained" && "Already Returned"}
           {status === "Expired" && "Eligibility Expired"}
-          {status === "Eligible" && "Mark as Returned"}
+          {status === "Pending" && "Mark as Returned"}
         </>
       )}
     </motion.button>
@@ -137,9 +137,6 @@ export default function ExpiredTable({
               "Account Number",
               "Account Name",
               "Status",
-              "Notified Date",
-              "Days Remaining",
-              "Deadline Date",
               "Action",
             ].map((h) => (
               <th
@@ -169,19 +166,6 @@ export default function ExpiredTable({
               </td>
               <td className="px-4 py-4">
                 <StatusBadge status={c.status} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.notificationDate)}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <DaysChip days={c.daysRemaining} status={c.status} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(c.deadlineDate)}
-                </span>
               </td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
