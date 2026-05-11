@@ -2,12 +2,6 @@
 
 /**
  * /app/admin/upload/page.tsx
- *
- * Content-only upload page — sidebar and topbar are rendered by the
- * parent layout (app/admin/layout.tsx), so this file contains only
- * the two cards visible in the mockup:
- *   1. Upload Excel File
- *   2. Expected Column Format
  */
 
 import { useState, useCallback } from "react";
@@ -18,13 +12,11 @@ import { Upload, AlertCircle, CheckCircle2, X, RotateCcw } from "lucide-react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PreviewRow {
+  accountCode: string;
   accountNo: string;
   customerName: string;
-  address: string | null;
-  email: string | null;
-  phone: string | null;
-  depositAmount: string;
-  notificationDate: string;
+  status: "Pending" | "BD Retained";
+  depositAmount?: string;
 }
 
 type UploadStage = "idle" | "preview" | "uploading" | "success" | "error";
@@ -40,18 +32,53 @@ const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
 const COLUMN_FORMAT = [
-  { col: "account_no",        type: "Text",   required: true  },
-  { col: "customer_name",     type: "Text",   required: true  },
-  { col: "notification_date", type: "Date",   required: true  },
-  { col: "deposit_amount",    type: "Number", required: true  },
-  { col: "address",           type: "Text",   required: false },
-  { col: "email",             type: "Text",   required: false },
-  { col: "phone",             type: "Text",   required: false },
+  { col: "account_code", type: "Text",   required: true  },
+  { col: "account_no",   type: "Text",   required: true  },
+  { col: "account_name", type: "Text",   required: true  },
+  { col: "deposit_amount", type: "Number", required: false },
+  { col: "address",      type: "Text",   required: false },
+  { col: "email",        type: "Text",   required: false },
+  { col: "phone",        type: "Text",   required: false },
 ];
 
-// ─── Client-side Excel preview parser ────────────────────────────────────────
+// ─── Header normalisation (mirrors server-side parser) ────────────────────────
 
-function parsePreviewFromBuffer(buffer: ArrayBuffer): PreviewRow[] | string {
+type FieldKey = "accountCode" | "accountNo" | "customerName" | "depositAmount";
+
+const HEADER_MAP: Record<string, FieldKey> = {
+  account_code:    "accountCode",
+  accountcode:     "accountCode",
+  "account code":  "accountCode",
+  acct_code:       "accountCode",
+
+  account_no:      "accountNo",
+  accountno:       "accountNo",
+  "account no":    "accountNo",
+  "account number":"accountNo",
+  accountnumber:   "accountNo",
+  acct_no:         "accountNo",
+
+  account_name:    "customerName",
+  accountname:     "customerName",
+  "account name":  "customerName",
+  customer_name:   "customerName",
+  customername:    "customerName",
+  "customer name": "customerName",
+  name:            "customerName",
+
+  deposit_amount:   "depositAmount",
+  "deposit amount": "depositAmount",
+  depositamount:    "depositAmount",
+  deposit:          "depositAmount",
+};
+
+const REQUIRED_FIELDS: FieldKey[] = ["accountCode", "accountNo", "customerName"];
+
+// ─── Client-side preview parser (two-sheet aware) ─────────────────────────────
+
+function parsePreviewFromBuffer(
+  buffer: ArrayBuffer,
+): PreviewRow[] | string {
   let wb: XLSX.WorkBook;
   try {
     wb = XLSX.read(buffer, { type: "array", cellDates: true });
@@ -59,112 +86,89 @@ function parsePreviewFromBuffer(buffer: ArrayBuffer): PreviewRow[] | string {
     return "Could not read the file. Make sure it is a valid .xlsx or .xls file.";
   }
 
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
-    header: 1,
-    defval: null,
-    // ✅ removed blankrows: false
-  });
-
-  // ✅ Need title row + header row + at least 1 data row
-  if (rows.length < 3) return "File is empty or has no data rows.";
-
-  // ✅ Row 0 is the report title — skip it, row 1 is the real header
-  const headerRow = (rows[1] as unknown[]).map((h) =>
-    String(h ?? "").toLowerCase().trim().replace(/\s+/g, " ")
-  );
-
-  const idx = (candidates: string[]) => {
-    for (const c of candidates) {
-      const i = headerRow.indexOf(c);
-      if (i !== -1) return i;
-    }
-    return -1;
-  };
-
-  const colMap = {
-    accountNo: idx([
-      "account_no",         // ✅ real header
-      "account no",
-      "account number",
-      "accountno",
-    ]),
-    customerName: idx([
-      "account name",       // ✅ real header
-      "customer name",
-      "customer_name",
-      "customername",
-      "name",
-    ]),
-    address:      idx(["address"]),
-    email:        idx(["email", "email address", "email_address"]),
-    phone:        idx(["phone", "phone number", "phone_number"]),
-    depositAmount: idx([
-      "deposit amount",
-      "depositamount",
-      "deposit_amount",
-      "deposit",
-    ]),
-    notificationDate: idx([
-      "date received (mm/dd/yyyy)",  // ✅ real header
-      "notification date",
-      "notificationdate",
-      "notification_date",
-      "notif date",
-    ]),
-  };
-
-  // Only accountNo, customerName, notificationDate are required now
-  const requiredKeys: Array<keyof typeof colMap> = [
-    "accountNo",
-    "customerName",
-    "notificationDate",
-  ];
-  const requiredLabels: Record<string, string> = {
-    accountNo:        "account_no",
-    customerName:     "account name",
-    notificationDate: "date received (mm/dd/yyyy)",
-  };
-  for (const key of requiredKeys) {
-    if (colMap[key] === -1)
-      return `Missing required column: "${requiredLabels[key]}". Check your Excel headers.`;
+  if (wb.SheetNames.length < 2) {
+    return `Expected 2 sheets ("Returned" and "Balance") but found ${wb.SheetNames.length}.`;
   }
 
-  // ✅ Data starts at row 2 now
-  const dataRows = rows.slice(2) as unknown[][];
+  const returnedRows = parseSheetPreview(
+    wb.Sheets[wb.SheetNames[0]],
+    wb.SheetNames[0],
+    "BD Retained",
+  );
+  if (typeof returnedRows === "string") return returnedRows;
 
-  return dataRows.map((row) => {
-    const get = (i: number) => (i !== -1 ? row[i] : null);
-    const rawDate = get(colMap.notificationDate);
-    let dateStr = "";
-    if (rawDate instanceof Date) {
-      dateStr = rawDate.toLocaleDateString("en-PH", {
-        year: "numeric", month: "short", day: "numeric",
-      });
-    } else if (typeof rawDate === "number") {
-      // ✅ handle serial date in preview too
-      const d = XLSX.SSF.parse_date_code(rawDate);
-      dateStr = new Date(d.y, d.m - 1, d.d).toLocaleDateString("en-PH", {
-        year: "numeric", month: "short", day: "numeric",
-      });
-    } else if (rawDate != null) {
-      dateStr = String(rawDate);
-    }
+  const balanceRows = parseSheetPreview(
+    wb.Sheets[wb.SheetNames[1]],
+    wb.SheetNames[1],
+    "Pending",
+  );
+  if (typeof balanceRows === "string") return balanceRows;
 
-    return {
-      accountNo:     String(get(colMap.accountNo) ?? "").trim(),
-      customerName:  String(get(colMap.customerName) ?? "").trim(),
-      address:       get(colMap.address) != null ? String(get(colMap.address)).trim() || null : null,
-      email:         get(colMap.email) != null ? String(get(colMap.email)).trim() || null : null,
-      phone:         get(colMap.phone) != null ? String(get(colMap.phone)).trim() || null : null,
-      depositAmount: get(colMap.depositAmount) != null
-        ? Number(get(colMap.depositAmount)).toLocaleString("en-PH", {
-            style: "currency", currency: "PHP",
-          })
-        : "—",
-      notificationDate: dateStr || "—",
-    };
+  return [...returnedRows, ...balanceRows];
+}
+
+function parseSheetPreview(
+  sheet: XLSX.WorkSheet,
+  sheetName: string,
+  status: "Pending" | "BD Retained",
+): PreviewRow[] | string {
+  if (!sheet) return `Sheet "${sheetName}" not found.`;
+
+  const rawRows: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: null,
   });
+
+  // Find header row by scanning first 5 rows
+  let headerRowIndex = -1;
+  let fieldIndexMap: Partial<Record<FieldKey, number>> = {};
+
+  for (let i = 0; i < Math.min(5, rawRows.length); i++) {
+    const candidate = (rawRows[i] as unknown[]).map((h) =>
+      String(h ?? "").toLowerCase().trim().replace(/[\s\u00A0]+/g, " ")
+    );
+    const tempMap: Partial<Record<FieldKey, number>> = {};
+    for (let j = 0; j < candidate.length; j++) {
+      const mapped = HEADER_MAP[candidate[j]];
+      if (mapped && !(mapped in tempMap)) tempMap[mapped] = j;
+    }
+    if (REQUIRED_FIELDS.every((f) => f in tempMap)) {
+      headerRowIndex = i;
+      fieldIndexMap = tempMap;
+      break;
+    }
+  }
+
+  if (headerRowIndex === -1) {
+    return `Sheet "${sheetName}": Could not find required columns (account_code, account_no, account_name). Check your headers.`;
+  }
+
+  const dataRows = rawRows.slice(headerRowIndex + 1) as unknown[][];
+  const rows: PreviewRow[] = [];
+
+  for (const row of dataRows) {
+    // Skip blank rows
+    if ((row as unknown[]).every((c) => c == null || String(c).trim() === "")) continue;
+
+    const get = (f: FieldKey) =>
+      fieldIndexMap[f] != null ? (row as unknown[])[fieldIndexMap[f]!] : null;
+
+    const rawDeposit = get("depositAmount");
+    const depositNum = rawDeposit != null ? Number(rawDeposit) : NaN;
+
+    rows.push({
+      accountCode:  String(get("accountCode") ?? "").trim(),
+      accountNo:    String(get("accountNo") ?? "").trim(),
+      customerName: String(get("customerName") ?? "").trim(),
+      status,
+      depositAmount:
+        !isNaN(depositNum) && depositNum >= 0
+          ? depositNum.toLocaleString("en-PH", { style: "currency", currency: "PHP" })
+          : undefined,
+    });
+  }
+
+  return rows;
 }
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -178,7 +182,12 @@ export default function AdminUploadPage() {
   const [year, setYear]               = useState<number>(currentYear);
   const [apiError, setApiError]       = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{
-    message: string; totalInserted: number; replaced: boolean; batchId: number;
+    message: string;
+    totalInserted: number;
+    returnedCount: number;
+    balanceCount: number;
+    replaced: boolean;
+    batchId: number;
   } | null>(null);
 
   // ── Dropzone ────────────────────────────────────────────────────────────────
@@ -256,12 +265,14 @@ export default function AdminUploadPage() {
 
   const batchLabel = `${MONTHS[month - 1]} ${year}`;
 
+  // Derived counts from preview (for the split badge while in preview stage)
+  const previewReturnedCount = preview.filter((r) => r.status === "BD Retained").length;
+  const previewBalanceCount  = preview.filter((r) => r.status === "Pending").length;
+
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-7 space-y-5" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-
-    
 
       {/* ════════════════════════════════════════════
           SUCCESS CARD
@@ -275,12 +286,13 @@ export default function AdminUploadPage() {
             <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0 mt-0.5" />
             <div className="flex-1 space-y-4">
               <p className="text-gray-700 text-sm">{successData.message}</p>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 {([
-                  ["Batch ID",          `#${successData.batchId}`],
-                  ["Records Imported",  String(successData.totalInserted)],
-                  ["Action",            successData.replaced ? "Replaced" : "Created"],
-                  ["Period",            batchLabel],
+                  ["Batch ID",        `#${successData.batchId}`],
+                  ["Total Imported",  String(successData.totalInserted)],
+                  ["BD Retained",     String(successData.returnedCount)],
+                  ["Pending",         String(successData.balanceCount)],
+                  ["Action",          successData.replaced ? "Replaced" : "Created"],
                 ] as [string, string][]).map(([label, value]) => (
                   <div key={label} className="rounded border border-gray-100 bg-gray-50 p-3">
                     <p className="text-xs text-gray-400">{label}</p>
@@ -305,7 +317,6 @@ export default function AdminUploadPage() {
       {stage !== "success" && (
         <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
 
-          {/* Card header */}
           <div className="px-5 py-3" style={{ backgroundColor: "#1e2d4f" }}>
             <h3 className="text-white font-semibold text-sm">Upload Excel File</h3>
           </div>
@@ -335,7 +346,6 @@ export default function AdminUploadPage() {
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              {/* Pill — mimics the "April 2025" badge in the mockup */}
               <span
                 className="px-3 py-1 rounded text-sm font-medium text-white"
                 style={{ backgroundColor: "#1e2d4f" }}
@@ -344,28 +354,17 @@ export default function AdminUploadPage() {
               </span>
             </div>
 
-            {/* Dropzone + buttons row */}
+            {/* Dropzone + buttons */}
             <div className="flex items-start gap-3">
-
-              {/* Dropzone */}
               <div
                 {...getRootProps()}
                 className="flex-1 border-2 border-dashed rounded cursor-pointer transition-all min-h-[88px] flex flex-col items-start justify-center gap-1 px-4 py-4 select-none"
                 style={{
-                  borderColor: isDragActive
-                    ? "#e8692a"
-                    : stage === "preview"
-                    ? "#86efac"
-                    : "#d1d5db",
-                  backgroundColor: isDragActive
-                    ? "#fff8f4"
-                    : stage === "preview"
-                    ? "#f0fdf4"
-                    : "#ffffff",
+                  borderColor: isDragActive ? "#e8692a" : stage === "preview" ? "#86efac" : "#d1d5db",
+                  backgroundColor: isDragActive ? "#fff8f4" : stage === "preview" ? "#f0fdf4" : "#ffffff",
                 }}
               >
                 <input {...getInputProps()} />
-
                 {stage === "preview" && file ? (
                   <>
                     <div className="flex items-center gap-2 text-green-600">
@@ -373,7 +372,8 @@ export default function AdminUploadPage() {
                       <span className="text-sm font-medium">{file.name}</span>
                     </div>
                     <p className="text-xs text-gray-400 ml-6">
-                      {preview.length} rows parsed — drop a new file to replace
+                      {preview.length} rows parsed ({previewReturnedCount} BD Retained,{" "}
+                      {previewBalanceCount} Pending) — drop a new file to replace
                     </p>
                   </>
                 ) : (
@@ -381,15 +381,14 @@ export default function AdminUploadPage() {
                     <div className="flex items-center gap-2 text-gray-400">
                       <Upload className="w-4 h-4 shrink-0" />
                       <span className="text-sm text-gray-500">
-                        {isDragActive ? "Drop here…" : "Or drag & drop a .csv / .xlsx file"}
+                        {isDragActive ? "Drop here…" : "Drag & drop a .xlsx file (must have Returned and Balance sheets)"}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 ml-6">One account number per row</p>
+                    <p className="text-xs text-gray-400 ml-6">Sheet 1: Returned → BD Retained · Sheet 2: Balance → Pending</p>
                   </>
                 )}
               </div>
 
-              {/* Buttons — stacked, match mockup */}
               <div className="flex flex-col gap-2 shrink-0">
                 <button
                   onClick={handleUpload}
@@ -433,12 +432,7 @@ export default function AdminUploadPage() {
               <div className="flex items-start gap-2.5 p-3 rounded border border-red-200 bg-red-50 text-sm text-red-600">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="flex-1">{apiError}</span>
-                <button
-                  onClick={() => {
-                    setApiError(null);
-                    setStage(file ? "preview" : "idle");
-                  }}
-                >
+                <button onClick={() => { setApiError(null); setStage(file ? "preview" : "idle"); }}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -454,7 +448,7 @@ export default function AdminUploadPage() {
             )}
           </div>
 
-          {/* Preview table — inside card, below controls */}
+          {/* Preview table */}
           {stage === "preview" && preview.length > 0 && (
             <div className="border-t border-gray-200">
               <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50">
@@ -467,7 +461,7 @@ export default function AdminUploadPage() {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                     <tr>
-                      {["Account No", "Customer Name", "Deposit", "Notif. Date", "Email"].map((h) => (
+                      {["Account Code", "Account No", "Account Name", "Status", "Deposit"].map((h) => (
                         <th
                           key={h}
                           className="px-5 py-2.5 text-left text-xs text-gray-400 font-medium whitespace-nowrap"
@@ -480,6 +474,9 @@ export default function AdminUploadPage() {
                   <tbody className="divide-y divide-gray-50">
                     {preview.slice(0, 8).map((row, i) => (
                       <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-5 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap">
+                          {row.accountCode || <span className="text-gray-300">—</span>}
+                        </td>
                         <td
                           className="px-5 py-2.5 font-medium whitespace-nowrap"
                           style={{ color: "#e8692a" }}
@@ -489,23 +486,26 @@ export default function AdminUploadPage() {
                         <td className="px-5 py-2.5 text-gray-700 whitespace-nowrap">
                           {row.customerName || "—"}
                         </td>
-                        <td className="px-5 py-2.5 text-gray-500 whitespace-nowrap">
-                          {row.depositAmount}
+                        <td className="px-5 py-2.5 whitespace-nowrap">
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-medium"
+                            style={
+                              row.status === "BD Retained"
+                                ? { backgroundColor: "#dcfce7", color: "#166534" }
+                                : { backgroundColor: "#fef9c3", color: "#854d0e" }
+                            }
+                          >
+                            {row.status}
+                          </span>
                         </td>
                         <td className="px-5 py-2.5 text-gray-500 whitespace-nowrap">
-                          {row.notificationDate}
-                        </td>
-                        <td className="px-5 py-2.5 text-gray-400 whitespace-nowrap">
-                          {row.email || "—"}
+                          {row.depositAmount ?? "—"}
                         </td>
                       </tr>
                     ))}
                     {preview.length > 8 && (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="px-5 py-2.5 text-center text-xs text-gray-400"
-                        >
+                        <td colSpan={5} className="px-5 py-2.5 text-center text-xs text-gray-400">
                           + {preview.length - 8} more rows not shown
                         </td>
                       </tr>
@@ -530,12 +530,7 @@ export default function AdminUploadPage() {
             <thead>
               <tr className="border-b border-gray-100">
                 {["Column", "Type", "Required"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-5 py-3 text-left text-xs text-gray-400 font-medium"
-                  >
-                    {h}
-                  </th>
+                  <th key={h} className="px-5 py-3 text-left text-xs text-gray-400 font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -546,9 +541,7 @@ export default function AdminUploadPage() {
                   <td className="px-5 py-3 text-gray-500">{type}</td>
                   <td className="px-5 py-3">
                     {required ? (
-                      <span className="font-semibold" style={{ color: "#e8692a" }}>
-                        Yes
-                      </span>
+                      <span className="font-semibold" style={{ color: "#e8692a" }}>Yes</span>
                     ) : (
                       <span className="text-gray-400">Optional</span>
                     )}

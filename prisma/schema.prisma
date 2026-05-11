@@ -9,19 +9,20 @@ datasource db {
 }
 
 model Customer {
-  id               Int         @id @default(autoincrement())
-  accountNo        String
-  customerName     String
-  address          String?
-  email            String?
-  phone            String?
-  depositAmount    Decimal
-  notificationDate DateTime
-  claimedAt        DateTime?
-  claimedBy        Int?
-  batchId          Int
-  batch            UploadBatch @relation(fields: [batchId], references: [id])
-  claimedUser      User?       @relation("ClaimedBy", fields: [claimedBy], references: [id]) // 👈 add this
+  id           Int         @id @default(autoincrement())
+  accountCode  String
+  accountNo    String
+  customerName String
+  status       String      @default("Pending") // "Pending" | "BD Retained"
+
+  // Optional — keep for future use
+  address       String?
+  email         String?
+  phone         String?
+  depositAmount Decimal?
+
+  batchId Int
+  batch   UploadBatch @relation(fields: [batchId], references: [id])
 
   @@unique([accountNo, batchId])
   @@map("Customer")
@@ -42,13 +43,12 @@ model UploadBatch {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  email     String     @unique
+  email     String   @unique
   password  String
-  role      String     @default("CSD")
-  createdAt DateTime   @default(now())
-  claimed   Customer[] @relation("ClaimedBy")
+  role      String   @default("CSD")
+  createdAt DateTime @default(now())
 
   @@map("User")
   @@schema("dbo")

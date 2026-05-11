@@ -23,7 +23,7 @@ export const runtime = "nodejs"; // Required for Buffer + SheetJS
 
 export async function POST(req: NextRequest) {
   // ── 1. Auth guard ──────────────────────────────────────────────────────────
- console.log("🔥 upload route hit"); 
+  console.log("🔥 upload route hit");
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -141,20 +141,23 @@ export async function POST(req: NextRequest) {
       // Bulk-insert customers
       await tx.customer.createMany({
         data: rows.map((r) => ({
+          accountCode: r.accountCode,
           accountNo: r.accountNo,
           customerName: r.customerName,
-          address: r.address,
-          email: r.email,
-          phone: r.phone,
-          depositAmount: r.depositAmount,
-          notificationDate: r.notificationDate,
+          status: r.status,
+          // Optional — only written if present in the file
+          depositAmount: r.depositAmount ?? null,
+          address: r.address ?? null,
+          email: r.email ?? null,
+          phone: r.phone ?? null,
           batchId: batch.id,
         })),
       });
-
       return {
         batchId: batch.id,
         totalInserted: rows.length,
+        returnedCount: parseResult.returnedCount,
+        balanceCount: parseResult.balanceCount,
         replaced: !!existing,
       };
     });
@@ -162,10 +165,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: result.replaced
-        ? `Existing batch for ${month}/${year} was replaced. ${result.totalInserted} customers imported.`
-        : `${result.totalInserted} customers imported successfully.`,
+        ? `Existing batch for ${month}/${year} replaced. ${result.totalInserted} customers imported (${result.returnedCount} BD Retained, ${result.balanceCount} Pending).`
+        : `${result.totalInserted} customers imported (${result.returnedCount} BD Retained, ${result.balanceCount} Pending).`,
       batchId: result.batchId,
       totalInserted: result.totalInserted,
+      returnedCount: result.returnedCount,
+      balanceCount: result.balanceCount,
       replaced: result.replaced,
     });
   } catch (err: unknown) {

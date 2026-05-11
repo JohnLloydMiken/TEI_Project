@@ -71,7 +71,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
               </span>
             </li>
             
-            <li className="px-3 py-1 bg-blue-100 border border-blue-400 rounded text-center">
+            <li className="px-3 py-1 bg-green-100 border border-green-400 rounded text-center">
               <span className="text-[10px] font-bold text-blue-800 uppercase">
                BD Retained
               </span>

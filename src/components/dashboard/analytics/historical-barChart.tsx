@@ -1,17 +1,17 @@
-import * as React from 'react';
+import CustomBarChart from "./charts/custom-bar-chart";
+import { getHistoricalData } from "@/lib/data/charts-data";
 
-export interface  HistoricalChartProps {
-}
+export default async function HistoricalChart() {
+  const data = await getHistoricalData();
 
-export default function HistoricalChart (props:  HistoricalChartProps) {
   return (
-    <div className='bg-white rounded-lg p-3 flex-1 border border-gray-300/50'>
-
-        <div>
-          <h1 className='text-teiblue font-medium text-xl'>Bill Deposit Refund History</h1>
-        </div>
-      
-        
+    <div className="h-full bg-white rounded-lg p-3 flex flex-col space-y-5 shadow-sm hover:shadow-lg">
+      <h1 className="text-teiblue font-medium text-xl">
+        Bill Deposit Refund History
+      </h1>
+      <div className="flex-1">
+        <CustomBarChart data={data} />
+      </div>
     </div>
   );
 }
