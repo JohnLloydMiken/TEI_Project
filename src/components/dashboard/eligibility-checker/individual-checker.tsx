@@ -18,14 +18,14 @@ export default function IndividualChecker() {
   const { customer, loading, error } = useFetchQualifiedUsers(query);
   const { markAsClaimed, claimingIds } = useMarkAsClaimed();
 
-async function handleClaim() {
-  if (!customer?.id || !customer?.accountNo) return;
-  await markAsClaimed(customer.id, customer.accountNo, () => {
-    // Re-fetch to get updated status from DB
-    setQuery("");
-    setTimeout(() => setQuery(accountNo.trim()), 100);
-  });
-}
+  async function handleClaim() {
+    if (!customer?.id || !customer?.accountNo) return;
+    await markAsClaimed(customer.id, customer.accountNo, () => {
+      // Re-fetch to get updated status from DB
+      setQuery("");
+      setTimeout(() => setQuery(accountNo.trim()), 100);
+    });
+  }
   const tabs = [
     { label: "Individual", href: individualPath },
     { label: "Batch (paste)", href: batchPastePath },
@@ -48,7 +48,7 @@ async function handleClaim() {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="w-full rounded-lg bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)] flex flex-col"
+      className="w-full rounded-lg bg-white shadow-sm hover:shadow-lg flex flex-col"
     >
       {/* Header */}
       <div className="bg-teiblue px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
@@ -87,26 +87,26 @@ async function handleClaim() {
       </div>
 
       {/* Search */}
-      <div className="w-full px-4 py-4 sm:px-6">
-        <div className="w-full sm:w-10/12 md:w-11/12 flex flex-row items-center gap-2 sm:gap-3 mx-auto">
-          <input
-            type="text"
-            name="customer-search"
-            className="flex-1 min-w-0 border border-gray-200 rounded-lg p-2.5 sm:p-3 bg-gray-100 outline-none text-sm sm:text-base"
-            placeholder="Account number (e.g. TEI-00001)"
-            value={accountNo}
-            onChange={(e) => setAccountNo(e.target.value)}
+      <div className="relative group w-10/12 mx-auto mt-2 border border-gray-100 rounded-2xl">
+        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+          <Search
+            className="text-slate-400 group-focus-within:text-[#e87722] transition-colors"
+            size={20}
           />
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={handleCheck}
-            className="shrink-0 flex flex-row justify-center items-center gap-1.5 sm:gap-2 border border-gray-200 p-2.5 sm:p-3 rounded-lg bg-teiblue text-white text-sm sm:text-base"
-          >
-            <span className="hidden xs:inline">Search</span>
-            <Search color="white" size={18} />
-          </motion.button>
         </div>
+        <input
+          type="text"
+          value={accountNo}
+          onChange={(e) => setAccountNo(e.target.value)}
+          placeholder="Enter Account Number (e.g. 906-2370-000)"
+          className="w-full h-12 pl-14 pr-36 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 outline-none focus:ring-2 focus:ring-gray-300/50 focus:border-gray-300 transition-all text-lg"
+        />
+        <button
+          className="absolute right-2 top-2 bottom-2 px-8 bg-[#1a3a5c] text-white font-bold rounded-xl hover:bg-[#244a75] transition-all active:scale-95 shadow-lg shadow-[#1a3a5c]/20"
+          onClick={handleCheck}
+        >
+          Verify
+        </button>
       </div>
 
       {/* Results placeholder */}
@@ -121,7 +121,7 @@ async function handleClaim() {
           <CustomerCard
             accountName={customer?.customerName}
             accountNumber={customer?.accountNo}
-            depositAmount={customer?.depositAmount ?? null}
+            accountCode={customer.accountCode}
             status={customer?.status ?? null}
             onClear={handleClear}
             onClaim={handleClaim} // ← new

@@ -9,7 +9,7 @@ export default async function UserDashboard() {
   if (!session || session.user.role !== "CSD") {
     redirect("/login");
   }else{
-    redirect("/individual-checker")
+    redirect("/overview")
   }
 
 

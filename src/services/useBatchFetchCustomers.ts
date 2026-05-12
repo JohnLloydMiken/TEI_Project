@@ -5,19 +5,13 @@ type Customer = {
   id: number;
   accountNo: string;
   customerName: string;
-  depositAmount: string;
-  notificationDate: string;
-  claimedAt: string | null;
-  claimedBy: number | null;
+  accountCode: string
   batch: {
     month: number;
     year: number;
     fileName: string;
   };
-  deadlineDate: string;
-  daysRemaining: number;
-  isExpired: Boolean;
-  status: "Pending"  | "BD Retained";
+  status: string;
 };
 interface BatchResult {
   found: Customer[];

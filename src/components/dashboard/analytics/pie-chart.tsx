@@ -1,10 +1,13 @@
 // components/dashboard/customer-pie-section.tsx
-import { getAllCustomers } from "@/lib/data/widgets-data";
+import { getCustomerCounts, getCurrentBatch } from "@/lib/data/widgets-data";
 import CustomerPieChart from "./charts/customer-pie-chart";
 import { div } from "motion/react-client";
 
 export default async function CustomerPieSection() {
-  const { BDRetained, Pending } = await getAllCustomers();
+    const [counts, batch] = await Promise.all([
+      getCustomerCounts(),
+      getCurrentBatch(),
+    ]);
 
   return (
     <div className="flex-1 bg-white rounded-lg  shadow-sm hover:shadow-lg p-3">
@@ -13,8 +16,8 @@ export default async function CustomerPieSection() {
       </h1>
       <div className="w-full flex justify-center items-center">
         <CustomerPieChart
-          bdRetainedCount={BDRetained.length}
-          pendingCount={Pending.length}
+          bdRetainedCount={counts.bdRetained}
+          pendingCount={counts.pending}
         />
       </div>
       <div className="w-full mx-auto flex justify-center items-center space-x-6">

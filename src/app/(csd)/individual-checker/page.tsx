@@ -1,56 +1,35 @@
-"use client";
-import { useEffect, useState } from "react";
+// No "use client" — this runs on the server
 import Widgets from "@/components/dashboard/eligibility-checker/widgets/widgets";
 import IndividualChecker from "@/components/dashboard/eligibility-checker/individual-checker";
+import { prisma } from "@/lib/prisma"; // your Prisma client
+import { getCustomerCounts, getCurrentBatch } from "@/lib/data/widgets-data";
 
-export default function EligibilityCheckerPage() {
-  // Initialize with 0 to avoid layout shift
-  const [customerCount, setCustomerCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [batch, setBatch] = useState("");
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const response = await fetch("/api/customers/all");
+export default async function EligibilityCheckerPage() {
+  const [counts, batch] = await Promise.all([
+    getCustomerCounts(),
+    getCurrentBatch(),
+  ]);
 
-        if (!response.ok) throw new Error("Failed to Fetch");
-
-        const result = await response.json();
-
-        // Accessing result.data because of your API structure
-        if (result.data && result.data.length > 0) {
-          setCustomerCount(result.data.length);
-          const batchDate = result.data[0].batch;
-         
-          const batchMonth = new Intl.DateTimeFormat("en-US", {
-            month: "long",
-          }).format(new Date(batchDate.year, batchDate.month - 1));
-           const batchLabel = `${batchMonth} ${batchDate.year}`;
-          setBatch(batchLabel);
-        }
-      } catch (e) {
-        console.error("Fetch error:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCustomers();
-  }, []); // ✅ Empty dependency array prevents infinite loops
+  const batchLabel = batch
+    ? `${new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+        new Date(batch.year, batch.month - 1),
+      )} ${batch.year}`
+    : "No batch yet";
 
   return (
     <div className="w-full flex flex-col gap-3">
       <div>
         <h1 className="text-2xl text-teiblue font-bold">Eligibility Checker</h1>
         <p className="text-sm text-gray-400 font-light">
-         Verify account refund eligibility in bulk or individually
+          Verify account refund eligibility in bulk or individually
         </p>
       </div>
 
       <Widgets
-        batch={batch}
-        qualified={isLoading ? "..." : customerCount}
-        claimed={2}
+        batch={batchLabel}
+        qualified={counts.total}
+        pending={counts.pending}
+        retained={counts.bdRetained}
       />
 
       <IndividualChecker />

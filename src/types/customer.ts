@@ -1,20 +1,16 @@
-export interface Customer {
-  id: number;
-  accountNo: string;
-  customerName: string;
-  depositAmount: string;
-  notificationDate: string;
-  claimedAt: string | null;
-  claimedBy: number | null;
-  batch: {
-    month: number;
-    year: number;
-    fileName: string;
-  };
-  deadlineDate: string;
-  daysRemaining: number;
-  isExpired: Boolean;
-  status: "Pending" | "BD Retained";
+import { Decimal } from "@prisma/client/runtime/client";
+
+export interface Customer{
+    id: number;
+    accountCode: string;
+    accountNo: string;
+    customerName: string;
+    status: string;
+    address: string | null;
+    email: string | null;
+    phone: string | null;
+    depositAmount: Decimal | null;
+    batchId: number;
 }
 
 export interface FetchCustomer {

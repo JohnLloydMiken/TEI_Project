@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { accountNumbers }: { accountNumbers: string[] } = body;
-  let status: "Pending" | "BD Retained";
+ 
   if (!Array.isArray(accountNumbers) || accountNumbers.length === 0) {
     return NextResponse.json(
       { error: "Account Numbers must be a non-empty array" },
@@ -27,10 +27,8 @@ export async function POST(req: NextRequest) {
         id:               true,
         accountNo:        true,
         customerName:     true,
-        depositAmount:    true,
-        notificationDate: true,
-        claimedAt:        true,
-        claimedBy:        true,
+        accountCode: true,
+        status: true, 
         batch: {
           select: {
             month:    true,
@@ -49,7 +47,7 @@ export async function POST(req: NextRequest) {
     const enriched = customers.map((customer) => {
       return {
         ...customer,        
-          status: "BD Retained"
+          
       };
     });
 

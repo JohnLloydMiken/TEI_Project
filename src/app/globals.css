@@ -5,7 +5,9 @@
   --foreground: #171717;
   --font-sora: 'Sora', sans-serif;
 }
-
+.recharts-wrapper :focus {
+  outline: none;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

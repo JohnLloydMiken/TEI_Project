@@ -1,44 +1,20 @@
-"use client";
-
+// No "use client" — Server Component
 import Widgets from "@/components/dashboard/eligibility-checker/widgets/widgets";
-import BatchPasteWidgets from "@/components/dashboard/eligibility-checker/widgets/batch-paste-widgets";
-import BatchPasteChecker from "@/components/dashboard/eligibility-checker/batch-paste";
-import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
-import { useState, useEffect } from "react";
-import useMarkAsClaimed from "@/services/useMarkeAsClaimed";
-export default function BatchPaste() {
-  const { results, loading, error, fetchBatch, clear } =
-    useBatchCustomerFetch();
-  const { markAsClaimed, claimingIds } = useMarkAsClaimed(); // ← add
-  // Derive widget values from results
-  const found = results?.found ?? [];
-  const eligible = found.filter((c) => c.status === "Eligible").length;
-  const expired = found.filter((c) => c.status === "Expired").length;
-  const claimed = found.filter((c) => c.status === "Claimed").length;
-  const notFound = results?.notFound?.length ?? 0;
-  const total = found.length + notFound;
-  const [localResults, setLocalResults] = useState(results?.found ?? []);
-  
+import BatchPasteCheckerContainer from "@/components/dashboard/eligibility-checker/BatchPasteCheckerContainer";
+import { getCustomerCounts, getCurrentBatch } from "@/lib/data/widgets-data";
 
-  // keep localResults in sync when a new search runs
-   useEffect(() => {
-    setLocalResults(results?.found ?? []);
-  }, [results]);
+export default async function BatchPastePage() {
+   const [counts, batch] = await Promise.all([
+      getCustomerCounts(),
+      getCurrentBatch(),
+    ]);
 
-  function handleRemove(id: number) {
-    setLocalResults((prev) => prev.filter((c) => c.id !== id));
-  }
+    const batchLabel = batch
+    ? `${new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+        new Date(batch.year, batch.month - 1),
+      )} ${batch.year}`
+    : "No batch yet";
 
-  // Optimistically flip the status to "Claimed" in local state
-  function handleClaim(id: number, accountNo: string) {
-    markAsClaimed(id, accountNo, (claimedId) => {
-      setLocalResults((prev) =>
-        prev.map((c) =>
-          c.id === claimedId ? { ...c, status: "Claimed" as const, claimedAt: new Date().toISOString() } : c
-        )
-      );
-    });
-  }
   return (
     <div className="w-full flex flex-col gap-3">
       <div>
@@ -48,25 +24,16 @@ export default function BatchPaste() {
         </p>
       </div>
 
-      <BatchPasteWidgets
-        numberOfAcc={total || 0}
-        eligible={eligible || "–"}
-        expired={expired || "–"}
-        claimed={claimed || "–"}
-        notFound={notFound || "–"}
+      {/* Static — rendered on server, no loading state needed */}
+      <Widgets
+        batch={batchLabel}
+        qualified={counts.total}
+        pending={counts.pending}
+        retained={counts.bdRetained}
       />
 
-      {/* Pass the hook's internals down as props */}
-      <BatchPasteChecker
-      results={{ ...results, found: localResults, notFound: results?.notFound ?? [] }}
-      fetchBatch={fetchBatch}
-      clear={clear}
-      onRemove={handleRemove}
-      onClaim={handleClaim}       // ← add
-      claimingIds={claimingIds}   // ← add
-      loading={loading}
-      error={error}
-    />
+      {/* Interactive — stays fully client-side */}
+      <BatchPasteCheckerContainer />
     </div>
   );
 }
