@@ -1,29 +1,24 @@
 "use client";
-import {
-  Users,
-  CheckLine,
-  Calendar1,
-  Bookmark,
-  ListChevronsDownUpIcon,
-} from "lucide-react";
+import { Users, UserCheck, Calendar1, UserCog } from "lucide-react";
 import { motion } from "motion/react";
 interface WidgetsProp {
   batch: string | null;
   qualified: number | string | null;
-  claimed: number | string | null;
+  pending: number | string | null;
+  retained: number | string | null;
 }
 
-export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
+export default function Widgets({ batch, qualified, pending, retained }: WidgetsProp) {
   return (
     <div className="w-full grid grid-col-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-4">
       {[
         { label: "Active Batch", value: batch, Icon: Calendar1 },
         { label: "Total Qualified Customers:", value: qualified, Icon: Users },
-        { label: "Pending Customers", value: claimed, Icon: CheckLine },
+        { label: "Pending Customers", value: pending, Icon: UserCog },
         {
           label: "Total BD Retained: ",
-          value: 5,
-          Icon: ListChevronsDownUpIcon,
+          value: retained,
+          Icon: UserCheck,
         },
       ].map((item, idx) => (
         <motion.div
@@ -32,7 +27,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
           transition={{ duration: 0.4, ease: "easeOut" }}
           key={idx}
           //shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]
-          className="relative flex-1 space-x-6  border border-gray-300/90  rounded-lg flex bg-white  items-center justify-center min-h-30"
+          className="relative flex-1 space-x-6 shadow-sm hover:shadow-lg  rounded-lg flex bg-white  items-center justify-center min-h-30"
         >
           <div className="flex flex-row items-center justify-center rounded-xl">
             <item.Icon color="#1a3a5c" size={44} strokeWidth={1.5} />
@@ -52,9 +47,9 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
 
       
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative flex-1 bg-white border border-gray-300/90 p-2 rounded-lg flex flex-col items-center justify-center"
       >
         {/* Label pinned to top-left */}
@@ -71,7 +66,7 @@ export default function Widgets({ batch, qualified, claimed }: WidgetsProp) {
               </span>
             </li>
             
-            <li className="px-3 py-1 bg-green-100 border border-green-400 rounded text-center">
+            <li className="px-3 py-1 bg-blue-100 border border-blue-400 rounded text-center">
               <span className="text-[10px] font-bold text-blue-800 uppercase">
                BD Retained
               </span>

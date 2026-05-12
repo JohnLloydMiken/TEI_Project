@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import EligibleTable from "./batch/eligible";
 import ReturnedTable from "./batch/returned";
-import ExpiredTable from "./batch/expired";
+
 interface BatchPasteUploadProps {
   results: ReturnType<typeof useBatchCustomerFetch>["results"];
   loading: boolean;

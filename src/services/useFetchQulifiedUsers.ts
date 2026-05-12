@@ -5,20 +5,15 @@ import { useState, useEffect } from "react";
 type Customer = {
   id: number;
   accountNo: string;
+  accountCode: string
   customerName: string;
-  depositAmount: string;
-  notificationDate: string;
-  claimedAt: string | null;
-  claimedBy: number | null;
   batch: {
     month: number;
     year: number;
     fileName: string;
   };
-  deadlineDate: string,
-  daysRemaining: number
-  isExpired: Boolean,
-  status:  "Pending" | "BD Retained";
+ 
+  status:  string,
 };
 
 type FetchState = {

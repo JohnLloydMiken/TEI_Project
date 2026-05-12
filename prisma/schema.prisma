@@ -9,46 +9,71 @@ datasource db {
 }
 
 model Customer {
-  id           Int         @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   accountCode  String
   accountNo    String
   customerName String
-  status       String      @default("Pending") // "Pending" | "BD Retained"
+  status       String  @default("Pending")
 
-  // Optional — keep for future use
   address       String?
   email         String?
   phone         String?
   depositAmount Decimal?
 
-  batchId Int
-  batch   UploadBatch @relation(fields: [batchId], references: [id])
+  batchId  Int
+  batch    UploadBatch   @relation(fields: [batchId], references: [id])
+  logs     CustomerLog[]
 
   @@unique([accountNo, batchId])
+  @@index([batchId])
+  @@index([status])
+  @@index([batchId, status])
   @@map("Customer")
   @@schema("dbo")
 }
 
 model UploadBatch {
-  id         Int        @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   fileName   String
   uploadedBy Int
-  uploadedAt DateTime   @default(now())
+  uploadedAt DateTime    @default(now())
   month      Int
   year       Int
   customers  Customer[]
 
+  @@index([year, month])
   @@map("UploadBatch")
   @@schema("dbo")
 }
 
+model CustomerLog {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  action     String   // "TAGGED" | "UNTAGGED"
+  fromStatus String
+  toStatus   String
+
+  performedBy Int
+  performer   User     @relation(fields: [performedBy], references: [id])
+  performedAt DateTime @default(now())
+
+  @@index([customerId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@map("CustomerLog")
+  @@schema("dbo")
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   name      String
-  email     String   @unique
+  email     String        @unique
   password  String
-  role      String   @default("CSD")
-  createdAt DateTime @default(now())
+  role      String        @default("CSD")
+  createdAt DateTime      @default(now())
+  logs      CustomerLog[]
 
   @@map("User")
   @@schema("dbo")

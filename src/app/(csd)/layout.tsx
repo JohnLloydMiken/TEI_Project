@@ -21,7 +21,7 @@ export default async function DashboardLayout({
       <div className="flex flex-col flex-1 overflow-hidden">
         <DashboardHeader name={session?.user.name} role={session?.user.role} />
 
-        <main className="flex-1 overflow-y-auto bg-[#F9FAFB] px-6 py-3">
+        <main className="flex-1 overflow-y-auto bg-[#f0f4f9] px-6 py-3">
           {children}
         </main>
       </div>

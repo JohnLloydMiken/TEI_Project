@@ -2,7 +2,7 @@
 export interface CustomerCardProps {
   accountName: string | null;
   accountNumber: string | null;
-  depositAmount: number | string | null;
+  accountCode:string,
   status: string | null;
   onClear: () => void;
   onClaim: () => void;       // ← add

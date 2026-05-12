@@ -11,14 +11,8 @@ type Customer = {
   id: number;
   accountNo: string;
   customerName: string;
-  depositAmount: string;
-  notificationDate: string;
-  claimedAt: string | null;
-  claimedBy: number | null;
+  accountCode:string,
   batch: { month: number; year: number; fileName: string };
-  deadlineDate: string;
-  daysRemaining: number;
-  isExpired: Boolean;
   status: "Pending" | "BD Retained";
 };
 interface BatchList {
@@ -110,6 +104,7 @@ export default function CustomerTable({
           <tr className="bg-[#f0f4f9]">
             {[
               "Account Number",
+              "Account Code",
               "Account Name",
               "Status",
               "Action",
@@ -134,6 +129,12 @@ export default function CustomerTable({
                   {c.accountNo}
                 </span>
               </td>
+              <td className="px-4 py-4">
+                <span className="font-mono text-sm font-medium text-teiblue hover:underline cursor-pointer">
+                  {c.accountCode}
+                </span>
+              </td>
+                            
               <td className="px-4 py-4">
                 <span className="text-sm font-semibold text-gray-800">
                   {c.customerName}

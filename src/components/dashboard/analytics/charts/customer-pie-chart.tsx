@@ -1,10 +1,13 @@
 // components/dashboard/customer-pie-chart.tsx
 "use client";
 
-import { Pie, PieChart, PieLabelRenderProps, Sector } from "recharts";
+import { Bold } from "lucide-react";
+import { Pie, PieChart, PieLabelRenderProps, Sector, ResponsiveContainer } from "recharts";
 
-const COLORS = ["#dbeafe", "#fef9c2"];
-const STROKES = ["oklch(70.7% 0.165 254.624)", "oklch(85.2% 0.199 91.936)"];
+const COLORS = ["#3B7597", "#093C5D"]; // [BD Retained (Sky), Pending (Amber)]
+
+
+
 
 const RADIAN = Math.PI / 180;
 
@@ -26,9 +29,10 @@ const renderCustomizedLabel = ({
     <text
       x={x}
       y={y}
-      fill="#1a3a5c"
+      fill="white"
       textAnchor="middle"
       dominantBaseline="central"
+      fontWeight={10}  
       fontSize={13}
     >
       {`${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -41,33 +45,37 @@ interface Props {
   pendingCount: number;
 }
 
-export default function CustomerPieChart({
-  bdRetainedCount,
-  pendingCount,
-}: Props) {
+export default function CustomerPieChart({ bdRetainedCount, pendingCount }: Props) {
   const data = [
     { name: "BD Retained", value: bdRetainedCount },
     { name: "Pending", value: pendingCount },
   ];
 
   return (
-    <PieChart width={300} height={300}>
-      <Pie
-        data={data}
-        cx="50%"
-        cy="50%"
-        labelLine={false}
-        label={renderCustomizedLabel}
-        dataKey="value"
-        shape={(props: any) => (
-          <Sector
-            {...props}
-            fill={COLORS[props.index % COLORS.length]}
-            stroke={STROKES[props.index % STROKES.length]}
-            strokeWidth={1}
+    <div className="w-full h-75 flex justify-center">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart >
+          <Pie
+          
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60} // Added slight inner radius for a modern "Donut-ish" look
+            outerRadius={100}
+            labelLine={false}
+            label={renderCustomizedLabel}
+            dataKey="value"
+            shape={(props: any) => (
+              <Sector
+                {...props}
+                fill={COLORS[props.index % COLORS.length]}
+          
+
+              />
+            )}
           />
-        )}
-      />
-    </PieChart>
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

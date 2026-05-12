@@ -13,23 +13,22 @@ const OUTER_R = 120;
 
 // Color zones: red → yellow → green
 const ZONES = [
-  { label: "Critical",  limit: 40,  fill: "#fca5a5", stroke: "#ef4444" }, // red
-  { label: "Moderate",  limit: 40,  fill: "#fde68a", stroke: "#f59e0b" }, // yellow
-  { label: "Good",      limit: 20,  fill: "#bbf7d0", stroke: "#22c55e" }, // green
+  { label: "Critical",  limit: 40,  fill: "#093C5D", stroke: "#ef4444" }, // red
+  { label: "Moderate",  limit: 40,  fill: "#3B7597", stroke: "#f59e0b" }, // yellow
+  { label: "Good",      limit: 20,  fill: "#6FD1D7", stroke: "#22c55e" }, // green
 ];
 
 // The three arc segments always cover 0–40, 40–80, 80–100 (total = 100)
 const ARC_DATA = [
-  { value: 40, fill: "#fca5a5", stroke: "#ef4444" },
-  { value: 40, fill: "#fde68a", stroke: "#f59e0b" },
-  { value: 20, fill: "#bbf7d0", stroke: "#22c55e" },
+  { value: 40, fill: "#093C5D", stroke: "#" }, // Soft Red/Border
+  { value: 40, fill: "#3B7597", stroke: "  " }, // Soft Amber/Border
+  { value: 20, fill: "#6FD1D7", stroke: "#" }, // Soft Green/Border
 ];
 
-// ─── Needle ───────────────────────────────────────────────────────────────────
 function getNeedleColor(rate: number) {
-  if (rate <= 40) return "#ef4444";
-  if (rate <= 80) return "#f59e0b";
-  return "#22c55e";
+  if (rate <= 40) return "#093C5D"; // Red 500
+  if (rate <= 80) return "#6FD1D7"; // Amber 500
+  return "#088395"; // Emerald 500
 }
 
 function Needle({ rate }: { rate: number }) {
@@ -61,9 +60,9 @@ function Needle({ rate }: { rate: number }) {
 
 // ─── Rate label color ─────────────────────────────────────────────────────────
 function getRateColor(rate: number) {
-  if (rate <= 40) return "text-red-500";
-  if (rate <= 80) return "text-yellow-500";
-  return "text-green-500";
+  if (rate <= 40) return "text-[#4988C4]";
+  if (rate <= 80) return "text-[#4988C4]";
+  return "text-[#4988C4]";
 }
 
 // ─── Month label helper ───────────────────────────────────────────────────────
