@@ -1,10 +1,8 @@
-// src/app/api/export/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
-import { computeDeadline } from "@/lib/deadlineLogic";
 
-type FilterType = "all" | "eligible" | "claimed" | "expired";
+type FilterType = "all" | "BDRetained" | "Pending";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -18,15 +16,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Fetch batch info + all customers with their claimed user
   const batch = await prisma.uploadBatch.findUnique({
     where: { id: Number(batchId) },
     include: {
-      customers: {
-        include: {
-          claimedUser: true,
-        },
-      },
+      customers: true, // no longer need claimedUser relation
     },
   });
 
@@ -34,95 +27,63 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Batch not found" }, { status: 404 });
   }
 
-  // Derive status for each customer and apply filter
-  const rows = batch.customers
-    .map((c) => {
-      const { status } = computeDeadline(
-        c.notificationDate,
-        c.claimedAt ?? null,
-      );
-      return { customer: c, status };
-    })
-    .filter(({ status }) => {
-      if (filter === "all") return true;
-      if (filter === "eligible") return status === "Eligible";
-      if (filter === "claimed") return status === "Claimed";
-      if (filter === "expired") return status === "Expired";
-      return true;
-    })
-    .map(({ customer: c, status }) => ({
-      "Account No": c.accountNo,
-      "Customer Name": c.customerName,
-      Address: c.address ?? "",
-      Email: c.email ?? "",
-      Phone: c.phone ?? "",
-      "Deposit Amount": Number(c.depositAmount),
-      "Notification Date": c.notificationDate.toLocaleDateString("en-PH", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      "Claimed At": c.claimedAt
-        ? c.claimedAt.toLocaleDateString("en-PH", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
-        : "",
-      "Claimed By": c.claimedUser?.name ?? "",
-      Status: status,
-    }));
+  // Filter by status field directly
+  const filtered = batch.customers.filter((c) => {
+    if (filter === "all") return true;
+    if (filter === "BDRetained") return c.status === "BD Retained";
+    if (filter === "Pending") return c.status === "Pending";
+    return true;
+  });
+
+  const rows = filtered.map((c) => ({
+    "Account Code": c.accountCode,
+    "Account No": c.accountNo,
+    "Customer Name": c.customerName,
+    Address: c.address ?? "",
+    Email: c.email ?? "",
+    Phone: c.phone ?? "",
+    "Deposit Amount": c.depositAmount ? Number(c.depositAmount) : "",
+    Status: c.status,
+  }));
 
   // Build workbook
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([["My Title"]]); // row 1
+  const ws = XLSX.utils.aoa_to_sheet([["placeholder"]]);
 
   XLSX.utils.sheet_add_json(ws, rows, {
     origin: "A2",
     skipHeader: false,
   });
 
-  // --- Column widths ---
+  // Column widths
   ws["!cols"] = [
+    { wch: 16 }, // Account Code
     { wch: 16 }, // Account No
     { wch: 28 }, // Customer Name
     { wch: 32 }, // Address
     { wch: 28 }, // Email
     { wch: 16 }, // Phone
     { wch: 16 }, // Deposit Amount
-    { wch: 22 }, // Notification Date
-    { wch: 22 }, // Claimed At
-    { wch: 22 }, // Claimed By
-    { wch: 12 }, // Status
+    { wch: 14 }, // Status
   ];
 
-  // --- Title row (A1 merged) ---
+  // Title row
   const filterLabel: Record<FilterType, string> = {
     all: "All Customers",
-    eligible: "Eligible Customers",
-    claimed: "Claimed / Returned Customers",
-    expired: "Expired Customers",
+    BDRetained: "BD Retained Customers",
+    Pending: "Pending Customers",
   };
-  const title = `${batch.fileName} — ${filterLabel[filter]} (${batch.month}/${batch.year})`;
+  const MONTHS = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December",
+  ];
+  const title = `${batch.fileName} — ${filterLabel[filter]} (${MONTHS[batch.month - 1]} ${batch.year})`;
   XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: "A1" });
 
-  const totalCols = 10;
+  const totalCols = 8;
   ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }];
 
-  // --- Header style helper ---
-  const headers = [
-    "Account No",
-    "Customer Name",
-    "Address",
-    "Email",
-    "Phone",
-    "Deposit Amount",
-    "Notification Date",
-    "Claimed At",
-    "Claimed By",
-    "Status",
-  ];
-  const colLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+  const colLetters = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
   // Style title cell
   if (ws["A1"]) {
@@ -133,37 +94,34 @@ export async function GET(req: NextRequest) {
     };
   }
 
-  // Style header row (row 2 → index 1)
-  colLetters.forEach((col, i) => {
+  // Style header row (row 2)
+  colLetters.forEach((col) => {
     const cell = `${col}2`;
     if (ws[cell]) {
       ws[cell].s = {
         font: { bold: true, color: { rgb: "FFFFFF" }, name: "Arial" },
         fill: { fgColor: { rgb: "2E6DA4" } },
         alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          bottom: { style: "thin", color: { rgb: "FFFFFF" } },
-        },
+        border: { bottom: { style: "thin", color: { rgb: "FFFFFF" } } },
       };
     }
   });
 
-  // Style data rows — zebra stripe + status color on Status column
+  // Style data rows
   rows.forEach((row, rowIdx) => {
-    const excelRow = rowIdx + 3; // data starts at row 3
+    const excelRow = rowIdx + 3;
     const isEven = rowIdx % 2 === 0;
 
-    colLetters.forEach((col, colIdx) => {
+    colLetters.forEach((col) => {
       const cell = `${col}${excelRow}`;
       if (!ws[cell]) return;
 
-      const isStatusCol = col === "J";
-      const isAmountCol = col === "F";
+      const isStatusCol = col === "H";
+      const isAmountCol = col === "G";
 
       const statusColor: Record<string, string> = {
-        Eligible: "217346", // green
-        Claimed: "1F5C99", // blue
-        Expired: "C0392B", // red
+        "BD Retained": "217346", // green
+        Pending:       "C07A00", // amber
       };
 
       ws[cell].s = {
@@ -180,17 +138,14 @@ export async function GET(req: NextRequest) {
           horizontal: isAmountCol ? "right" : isStatusCol ? "center" : "left",
           vertical: "center",
         },
-        numFmt: isAmountCol ? "#,##0.00" : undefined,
       };
 
-      // Format deposit amount
       if (isAmountCol) {
         ws[cell].z = "#,##0.00";
       }
     });
   });
 
-  // Row height for title
   ws["!rows"] = [{ hpt: 28 }, { hpt: 20 }];
 
   XLSX.utils.book_append_sheet(wb, ws, "Customers");

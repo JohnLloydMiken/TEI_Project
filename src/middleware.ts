@@ -11,13 +11,13 @@ export default withAuth(
     // Redirect /dashboard root based on role
     if (path === "/dashboard") {
       return role === "ADMIN"
-        ? NextResponse.redirect(new URL("/dashboard/upload-list", req.url))
-        : NextResponse.redirect(new URL("/individual-checker", req.url));
+        ? NextResponse.redirect(new URL("/dashboard/overview", req.url))
+        : NextResponse.redirect(new URL("/overview", req.url));
     }
 
     // Block CSD from any /dashboard/admin_dashboard/* route
     if (path.startsWith("/dashboard") && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/individual-checker", req.url));
+      return NextResponse.redirect(new URL("/overview", req.url));
     }
 
     // Block ADMIN from any /dashboard/user_dashboard/* route

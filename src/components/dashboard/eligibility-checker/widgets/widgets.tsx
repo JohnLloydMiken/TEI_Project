@@ -10,13 +10,13 @@ interface WidgetsProp {
 
 export default function Widgets({ batch, qualified, pending, retained }: WidgetsProp) {
   return (
-    <div className="w-full grid grid-col-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-4">
+    <div className="w-full grid grid-cols-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-4">
       {[
         { label: "Active Batch", value: batch, Icon: Calendar1 },
-        { label: "Total Qualified Customers:", value: qualified, Icon: Users },
+        { label: "Total Qualified Customers", value: qualified, Icon: Users },
         { label: "Pending Customers", value: pending, Icon: UserCog },
         {
-          label: "Total BD Retained: ",
+          label: "Total BD Retained ",
           value: retained,
           Icon: UserCheck,
         },
@@ -34,10 +34,10 @@ export default function Widgets({ batch, qualified, pending, retained }: Widgets
           </div>
           <div className=" flex flex-row justify-between items-center ">
             <div className="space-y-3 flex flex-col justify-center items-center">
-              <p className=" text-sm text-gray-400 font-light whitespace-nowrap">
+              <p className=" md:text-sm text-xs text-gray-400 font-light whitespace-nowrap">
                 {item.label}:
               </p>
-              <h1 className="text-2xl text-teiblue font-bold leading-none">
+              <h1 className="md:text-2xl text-xl text-teiblue font-bold leading-none">
                 {item.value}
               </h1>
             </div>
@@ -50,7 +50,7 @@ export default function Widgets({ batch, qualified, pending, retained }: Widgets
         initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative flex-1 bg-white border border-gray-300/90 p-2 rounded-lg flex flex-col items-center justify-center"
+        className="relative md:flex-1 w-full bg-white border border-gray-300/90 p-2 rounded-lg flex flex-col items-center justify-center"
       >
         {/* Label pinned to top-left */}
         <p className="absolute top-3 left-4 text-sm text-gray-400 font-medium">

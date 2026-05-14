@@ -1,63 +1,81 @@
-// src/lib/parseAccountExcel.ts
+/**
+ * Client-side parser for the checker Excel.
+ * Single flat sheet — only account_no is required.
+ * account_code and customer_name are treated as optional
+ * since the authoritative data comes from the DB masterlist.
+ */
 import * as XLSX from "xlsx";
 
-// Matches the real header exactly as it appears in the file
-const ACCOUNT_HEADER_VARIANTS = ["account_no", "account no"];
+export type CheckerRow = {
+  accountNo: string;
+};
 
-export type ParseResult =
-  | { ok: true; accountNumbers: string[]; totalRows: number }
-  | { ok: false; error: string };
+export type CheckerParseResult =
+  | { success: true; rows: CheckerRow[]; total: number }
+  | { success: false; error: string };
 
-export async function parseAccountExcel(file: File): Promise<ParseResult> {
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
+const ACCOUNT_NO_KEYS = new Set([
+  "account_no",
+  "accountno",
+  "account no",
+  "account number",
+  "accountnumber",
+  "acct_no",
+]);
 
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
+export function parseCheckerExcel(buffer: ArrayBuffer): CheckerParseResult {
+  let wb: XLSX.WorkBook;
+  try {
+    wb = XLSX.read(buffer, { type: "array" });
+  } catch {
+    return { success: false, error: "Could not read the file. Make sure it is a valid .xlsx or .xls file." };
+  }
 
-  // header: 1 gives a raw 2D array — no automatic header mapping
-  const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  if (!ws) return { success: false, error: "The file appears to be empty." };
 
-  if (!rows || rows.length < 3) {
-    // Need at least: title row + header row + 1 data row
+  const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    defval: null,
+  });
+
+  // Find header row (scan first 5 rows)
+  let headerRowIndex = -1;
+  let accountNoColIndex = -1;
+
+  for (let i = 0; i < Math.min(5, rawRows.length); i++) {
+    const candidate = (rawRows[i] as unknown[]).map((h) =>
+      String(h ?? "").toLowerCase().trim().replace(/[\s\u00A0]+/g, " "),
+    );
+    const idx = candidate.findIndex((h) => ACCOUNT_NO_KEYS.has(h));
+    if (idx !== -1) {
+      headerRowIndex = i;
+      accountNoColIndex = idx;
+      break;
+    }
+  }
+
+  if (headerRowIndex === -1) {
     return {
-      ok: false,
-      error: "The file appears to be empty or has no data rows.",
+      success: false,
+      error: 'Could not find an "account_no" column. Check your headers.',
     };
   }
 
-  // ── Row 0 is the report title label — skip it
-  // ── Row 1 is the actual header row
-  const headerRow = rows[1].map((h) => String(h ?? "").trim().toLowerCase());
+  const dataRows = rawRows.slice(headerRowIndex + 1);
+  const rows: CheckerRow[] = [];
 
-  const colIndex = headerRow.findIndex((h) =>
-    ACCOUNT_HEADER_VARIANTS.includes(h)
-  );
-
-  if (colIndex === -1) {
-    const found = rows[1].map((h) => `"${h}"`).join(", ");
-    return {
-      ok: false,
-      error: `No account number column found. Headers detected: ${found}. Expected "account_no".`,
-    };
+  for (const row of dataRows as unknown[][]) {
+    if (row.every((c) => c == null || String(c).trim() === "")) continue;
+    const raw = row[accountNoColIndex];
+    const accountNo = raw != null ? String(raw).trim() : "";
+    if (!accountNo) continue; // skip rows where account_no cell is blank
+    rows.push({ accountNo });
   }
 
-  // ── Data starts at row 2 (index 2)
-  const accountNumbers = rows
-    .slice(2)
-    .map((row) => String(row[colIndex] ?? "").trim())
-    .filter(Boolean);
-
-  if (accountNumbers.length === 0) {
-    return {
-      ok: false,
-      error: "The account_no column was found but contains no data.",
-    };
+  if (rows.length === 0) {
+    return { success: false, error: "No account numbers found in the file." };
   }
 
-  return {
-    ok: true,
-    accountNumbers,
-    totalRows: accountNumbers.length,
-  };
+  return { success: true, rows, total: rows.length };
 }

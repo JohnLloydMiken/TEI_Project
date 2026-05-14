@@ -1,63 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
-type Customer = {
-  id: number;
-  accountNo: string;
-  customerName: string;
-  accountCode: string
-  batch: {
-    month: number;
-    year: number;
-    fileName: string;
-  };
-  status: string;
-};
-interface BatchResult {
-  found: Customer[];
-  notFound?: string[];
-}
+import { useState, useTransition } from "react";
+import { checkBatchAccountsAction, type CheckResult } from "@/lib/actions/batch";
+import { toast } from "sonner";
 
 type BatchFetchState = {
-  results: BatchResult | null;
+  results: CheckResult | null;
   loading: boolean;
   error: string | null;
 };
 
-// useBatchCustomerFetch.ts
 export default function useBatchCustomerFetch() {
-  const [results, setResults] = useState<BatchResult | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<CheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  // ✅ No useEffect, no dependency array, no fighting React
-  const fetchBatch = async (accountNumbers: string[]) => {
+  const fetchBatch = (accountNumbers: string[]) => {
     if (accountNumbers.length === 0) return;
 
-    setLoading(true);
     setResults(null);
     setError(null);
 
-    try {
-      const response = await fetch("/api/customers/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountNumbers }),
-      });
+    startTransition(async () => {
+      const res = await checkBatchAccountsAction(accountNumbers);
 
-      const json = await response.json();
-
-      if (!response.ok) {
-        setError(json.error ?? "Batch fetch failed");
+      if (!res.success) {
+        setError(res.error);
+        toast.error(res.error);
         return;
       }
 
-      setResults(json.data);
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+      setResults(res.result);
+    });
   };
 
   const clear = () => {
@@ -65,5 +39,5 @@ export default function useBatchCustomerFetch() {
     setError(null);
   };
 
-  return { results, loading, error, fetchBatch, clear };
+  return { results, loading: isPending, error, fetchBatch, clear };
 }

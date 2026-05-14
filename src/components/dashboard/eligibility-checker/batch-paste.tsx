@@ -1,78 +1,106 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Trash } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-
 import { useState, useEffect } from "react";
-import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
 import { toast } from "sonner";
+
+import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
+import { toggleCustomerStatusAction, type CheckResult } from "@/lib/actions/batch";
 import CustomerTable from "./batch/customer-table";
 import NotFoundTable from "@/components/dashboard/eligibility-checker/batch/not-found";
 
-interface BatchPasteCheckerProps {
-  results: ReturnType<typeof useBatchCustomerFetch>["results"];
-  loading: boolean;
-  error: string | null;
-  fetchBatch: (accounts: string[]) => void;
-  clear: () => void;
-  onRemove: (id: number) => void;
-  onClaim: (id: number, accountNo: string) => void; // ← add
-  claimingIds: Set<number>; // ← add
-}
-
 type ViewTab = "found" | "notFound";
 
-export default function BatchPasteChecker({
-  results,
-  loading,
-  error,
-  fetchBatch,
-  clear,
-  onRemove,
-  onClaim, // ← add
-  claimingIds,
-}: BatchPasteCheckerProps) {
+export default function BatchPasteChecker() {
   const pathname = usePathname();
+  const { results, loading, error, fetchBatch, clear } = useBatchCustomerFetch();
 
-  const individualPath = "/individual-checker";
-  const batchPastePath = "/batch-checker/paste";
-  const batchUploadPath = "/batch-checker/upload";
-
+  // Mirror BatchUpload: own the results mutation locally
+  const [localResults, setLocalResults] = useState<CheckResult | null>(null);
+  const [claimingIds, setClaimingIds] = useState<Set<number>>(new Set());
   const [accountNo, setAccountNo] = useState("");
   const [activeView, setActiveView] = useState<ViewTab>("found");
 
   const tabs = [
-    { label: "Individual", href: individualPath },
-    { label: "Batch (paste)", href: batchPastePath },
-    { label: "Batch (upload)", href: batchUploadPath },
+    { label: "Individual", href: "/individual-checker" },
+    { label: "Batch (paste)", href: "/batch-checker/paste" },
+    { label: "Batch (upload)", href: "/batch-checker/upload" },
   ];
 
-  const foundCount = results?.found?.length ?? 0;
-  const notFoundCount = results?.notFound?.length ?? 0;
+  // Sync hook results → local state
+  useEffect(() => {
+    if (results) {
+      setLocalResults(results);
+      setActiveView("found");
+    }
+  }, [results]);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
 
   function handleCheck() {
     const array = accountNo
       .split("\n")
       .map((a) => a.trim())
       .filter(Boolean);
-
     fetchBatch(array);
   }
 
   function handleClear() {
     setAccountNo("");
+    setLocalResults(null);
     clear();
   }
 
-  // Reset to "found" tab whenever a new search completes
-  useEffect(() => {
-    if (results) setActiveView("found");
-  }, [results]);
+  // ── Toggle Pending ↔ BD Retained (optimistic) ──────────────────────────
+  async function handleClaim(customerId: number) {
+    setClaimingIds((prev) => new Set(prev).add(customerId));
 
-  useEffect(() => {
-    if (error) toast.error(error);
-  }, [error]);
+    const res = await toggleCustomerStatusAction(customerId);
+
+    if (res.success) {
+      setLocalResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          found: prev.found.map((c) =>
+            c.id === customerId ? { ...c, status: res.newStatus } : c,
+          ),
+        };
+      });
+      toast.success(
+        res.newStatus === "BD Retained"
+          ? "Customer tagged as BD Retained."
+          : "Customer untagged back to Pending.",
+      );
+    } else {
+      toast.error(res.error);
+    }
+
+    setClaimingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(customerId);
+      return next;
+    });
+  }
+
+  // ── UI-only remove ─────────────────────────────────────────────────────
+  function handleRemove(customerId: number) {
+    setLocalResults((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        found: prev.found.filter((c) => c.id !== customerId),
+      };
+    });
+  }
+
+  const foundCount = localResults?.found.length ?? 0;
+  const notFoundCount = localResults?.notFound.length ?? 0;
 
   const viewTabs: { key: ViewTab; label: string; count: number }[] = [
     { key: "found", label: "Found", count: foundCount },
@@ -89,9 +117,7 @@ export default function BatchPasteChecker({
       <div className="w-full rounded-lg bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]">
         {/* Header */}
         <div className="bg-teiblue px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
-          <p className="text-white text-lg sm:text-xl font-normal">
-            Batch Paste Checker
-          </p>
+          <p className="text-white text-lg sm:text-xl font-normal">Batch Paste Checker</p>
           <p className="text-white/60 text-xs sm:text-sm font-normal">
             Enter account numbers to verify
           </p>
@@ -175,12 +201,9 @@ export default function BatchPasteChecker({
                 }`}
               >
                 {label}
-                {/* Count badge */}
                 <span
                   className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "bg-white/25 text-white"
-                      : "bg-gray-300 text-gray-600"
+                    isActive ? "bg-white/25 text-white" : "bg-gray-300 text-gray-600"
                   }`}
                 >
                   {count}
@@ -190,7 +213,7 @@ export default function BatchPasteChecker({
           })}
         </div>
 
-        {/* Table Area with fade transition */}
+        {/* Table */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
@@ -201,13 +224,13 @@ export default function BatchPasteChecker({
           >
             {activeView === "found" ? (
               <CustomerTable
-                customers={results?.found ?? []}
-                onRemove={onRemove}
-                onClaim={onClaim} // ← add
-                claimingIds={claimingIds} // ← add
+                customers={localResults?.found ?? []}
+                onRemove={handleRemove}
+                onClaim={handleClaim}
+                claimingIds={claimingIds}
               />
             ) : (
-              <NotFoundTable accountNumbers={results?.notFound ?? []} />
+              <NotFoundTable accountNumbers={localResults?.notFound ?? []} />
             )}
           </motion.div>
         </AnimatePresence>

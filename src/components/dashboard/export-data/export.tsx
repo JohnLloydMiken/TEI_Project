@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { FileDown, Loader2, CheckCircle2, Clock, XCircle, Users } from "lucide-react"
 import { useFetchBatches } from "@/services/useFetchBatches"
 
-type FilterType = "all" | "eligible" | "claimed" | "expired"
+type FilterType = "all" | "BDRetained" | "Pending" 
 
 const FILTERS: {
   key: FilterType
@@ -19,23 +19,18 @@ const FILTERS: {
     color: "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
   },
   {
-    key: "eligible",
-    label: "Eligible",
+    key: "BDRetained",
+    label: "BD Retained",
     icon: <CheckCircle2 className="w-4 h-4" />,
-    color: "bg-green-50 text-green-700 border-green-300 hover:bg-green-100",
-  },
-  {
-    key: "claimed",
-    label: "Claimed / Returned",
-    icon: <Clock className="w-4 h-4" />,
     color: "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100",
   },
   {
-    key: "expired",
-    label: "Expired",
-    icon: <XCircle className="w-4 h-4" />,
-    color: "bg-red-50 text-red-700 border-red-300 hover:bg-red-100",
+    key: "Pending",
+    label: "Pending Customer",
+    icon: <Clock className="w-4 h-4" />,
+    color: "bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100",
   },
+ 
 ]
 
 const MONTHS = [
@@ -63,7 +58,7 @@ export default function ExportPage() {
     setExportError(null)
 
     try {
-      const res = await fetch(`/api/reports/export-data?batchId=${3}&filter=${filter}`)
+      const res = await fetch(`/api/reports/export-data?batchId=${selectedBatch}&filter=${filter}`)
 
       if (!res.ok) {
         const json = await res.json()
@@ -106,7 +101,7 @@ export default function ExportPage() {
           <select
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800
                        focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            value={3}
+            value={selectedBatch ?? ""}
             onChange={(e) => setSelectedBatch(Number(e.target.value))}
           >
             {batches.map((b) => (

@@ -1,5 +1,7 @@
 // services/useMarkAsClaimed.ts
+"use client";
 import { useState } from "react";
+import { toggleCustomerStatusAction } from "@/lib/actions/batch"; // adjust path
 import { toast } from "sonner";
 
 export default function useMarkAsClaimed() {
@@ -8,36 +10,24 @@ export default function useMarkAsClaimed() {
   async function markAsClaimed(
     customerId: number,
     accountNo: string,
-    onSuccess?: (id: number) => void
-  ): Promise<boolean> {
+    onSuccess?: () => void
+  ) {
     setClaimingIds((prev) => new Set(prev).add(customerId));
-    try {
-      const res = await fetch("/api/action/claim", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountNo }),
-      });
 
-      const data = await res.json();
+    const result = await toggleCustomerStatusAction(customerId);
 
-      if (!res.ok) {
-        toast.error(data.error ?? "Failed to mark as claimed.");
-        return false;
-      }
-
-      toast.success(`${accountNo} marked as claimed.`);
-      onSuccess?.(customerId); // ← caller decides what to do with UI
-      return true;
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-      return false;
-    } finally {
-      setClaimingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(customerId);
-        return next;
-      });
+    if (result.success) {
+      toast.success(`${accountNo} → ${result.newStatus}`);
+      onSuccess?.();
+    } else {
+      toast.error(result.error);
     }
+
+    setClaimingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(customerId);
+      return next;
+    });
   }
 
   return { markAsClaimed, claimingIds };

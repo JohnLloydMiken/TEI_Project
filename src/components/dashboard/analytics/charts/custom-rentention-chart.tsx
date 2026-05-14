@@ -21,8 +21,8 @@ const ZONES = [
 // The three arc segments always cover 0–40, 40–80, 80–100 (total = 100)
 const ARC_DATA = [
   { value: 40, fill: "#093C5D", stroke: "#" }, // Soft Red/Border
-  { value: 40, fill: "#3B7597", stroke: "  " }, // Soft Amber/Border
-  { value: 20, fill: "#6FD1D7", stroke: "#" }, // Soft Green/Border
+  { value: 40, fill: "#5684AE", stroke: "  " }, // Soft Amber/Border
+  { value: 20, fill: "#DDE6EE", stroke: "#" }, // Soft Green/Border
 ];
 
 function getNeedleColor(rate: number) {
