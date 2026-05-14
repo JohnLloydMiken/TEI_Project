@@ -1,7 +1,7 @@
 import * as React from "react";
 import { getServerSession } from "next-auth";
 import { adminNav, csdNav } from "@/config/dashboard-nav.config";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import DashboardSidebar from "@/components/dashboard/dashboard-sidebar";
 
@@ -12,15 +12,16 @@ export default async function DashboardLayout({
   const isAdmin = session?.user.role === "ADMIN";
   const navItems = isAdmin ? adminNav : csdNav;
 
-  return (
-    <div className="flex flex-col h-screen">
-      <DashboardHeader name={session?.user.name} role={session?.user.role} />
+   return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar sits in the row, fixed-width, full height */}
+      <DashboardSidebar navItems={navItems} isAdmin={isAdmin} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <DashboardSidebar navItems={navItems} isAdmin={isAdmin} />
+      {/* Right column: header stacked above scrollable main */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <DashboardHeader name={session?.user.name} role={session?.user.role} />
 
-        {/* Offset on mobile so hamburger button doesn't overlap content */}
-        <main className="flex-1 overflow-y-auto bg-gray-100 p-6 md:pt-6 pt-16">
+        <main className="flex-1 overflow-y-auto bg-[#f0f4f9] px-6 py-3">
           {children}
         </main>
       </div>

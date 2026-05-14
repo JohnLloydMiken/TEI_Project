@@ -13,7 +13,7 @@ export default function OverviewPage() {
         <OverviewWidgets />
       </Suspense>
 
-      <div className="w-full flex flex-row items-stretch space-x-3">
+      <div className="w-full flex lg:flex-row flex-col items-stretch md:space-x-3 space-y-2">
         <div className="flex-2 min-w-0">
           <Suspense fallback={<DashboardSkeleton />}>
             <HistoricalChart />

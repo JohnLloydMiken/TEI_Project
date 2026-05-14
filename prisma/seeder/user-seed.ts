@@ -38,7 +38,18 @@ export async function seedUsers(prisma: PrismaClient) {
     },
   })
 
-  console.log('✅ Users seeded:', { admin, csd1, csd2 })
+   const csd3 = await prisma.user.upsert({
+    where: { email: 'csd3@tei.com' },
+    update: {},
+    create: {
+      name: 'John Lloyd Miken',
+      email: 'csd3@tei.com',
+      password: "miken123",
+      role: 'CSD',
+    },
+  })
+
+  console.log('✅ Users seeded:', { admin, csd1, csd2, csd3 })
 
   
 }

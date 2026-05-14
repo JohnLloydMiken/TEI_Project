@@ -1,122 +1,128 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
+
 import ExcelDropzone from "@/components/dashboard/eligibility-checker/ExcelDropzone";
 import CustomerTable from "@/components/dashboard/eligibility-checker/batch/customer-table";
 import NotFoundTable from "@/components/dashboard/eligibility-checker/batch/not-found";
-import useBatchCustomerFetch from "@/services/useBatchFetchCustomers";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import EligibleTable from "./batch/eligible";
+import PendingTable from "./batch/pending";
 import ReturnedTable from "./batch/returned";
 
-interface BatchPasteUploadProps {
-  results: ReturnType<typeof useBatchCustomerFetch>["results"];
-  loading: boolean;
-  error: string | null;
-  fetchBatch: (accounts: string[]) => void;
-  clear: () => void;
-  onRemove: (id: number) => void;
-  onClaim: (id: number, accountNo: string) => void; // ← add
-  claimingIds: Set<number>;
-}
+import {
+  checkBatchAccountsAction,
+  toggleCustomerStatusAction,
+  type CheckResult,
+} from "@/lib/actions/batch";
 
 type ViewTab = "found" | "notFound" | "pending" | "retained";
 
-export default function BatchUpload({
-  results,
-  loading,
-  error,
-  fetchBatch,
-  clear,
-  onRemove,
-  onClaim,
-  claimingIds,
-}: BatchPasteUploadProps) {
+export default function BatchUpload() {
   const pathname = usePathname();
+
+  const [results, setResults] = useState<CheckResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [claimingIds, setClaimingIds] = useState<Set<number>>(new Set());
+  const [isChecking, startCheck] = useTransition();
   const [activeView, setActiveView] = useState<ViewTab>("found");
 
-  const individualPath = "/individual-checker";
-  const batchPastePath = "/batch-checker/paste";
-  const batchUploadPath = "/batch-checker/upload";
-
   const tabs = [
-    { label: "Individual", href: individualPath },
-    { label: "Batch (paste)", href: batchPastePath },
-    { label: "Batch (upload)", href: batchUploadPath },
+    { label: "Individual", href: "/individual-checker" },
+    { label: "Batch (paste)", href: "/batch-checker/paste" },
+    { label: "Batch (upload)", href: "/batch-checker/upload" },
   ];
 
-  const foundCount = results?.found?.length ?? 0;
-  const notFoundCount = results?.notFound?.length ?? 0;
+  // ── On file parsed: run the DB lookup ──────────────────────────────────────
+  const handleReady = (accountNos: string[]) => {
+    setError(null);
+    setResults(null);
 
-  const retained = results?.found
-    .map((c) => c.status)
-    .filter((customer) => customer === "BD Retained");
-  const eligible = results?.found
-    .map((c) => c.status)
-    .filter((customer) => customer === "Pending");
-
-  const eligible_customers = results?.found.filter(
-    (customer) => customer.status === "Pending",
-  );
- ;
-
-  const returned_customers = results?.found.filter(
-    (customer) => customer.status === "BD Retained",
-  );
-  const viewTabs: { key: ViewTab; label: string; count: number }[] = [
-    { key: "found", label: "Found", count: foundCount },
-    { key: "notFound", label: "Not Found", count: notFoundCount },
-    { key: "pending", label: "Pending", count: eligible?.length || 0 },
-    { key: "retained", label: "Retained", count: retained?.length || 0 },
-  
-  ];
-
-  // Reset to "found" tab whenever a new result arrives
-  useEffect(() => {
-    if (results) setActiveView("found");
-  }, [results]);
-
-  const handleAccountsReady = (accountNumbers: string[]) => {
-    fetchBatch(accountNumbers);
+    startCheck(async () => {
+      const res = await checkBatchAccountsAction(accountNos);
+      if (!res.success) {
+        setError(res.error);
+        return;
+      }
+      setResults(res.result);
+      setActiveView("found");
+    });
   };
 
-  const view_table = (view: string) => {
-    switch (view) {
-      case "found":
-        return (
-          <CustomerTable
-            customers={results?.found ?? []}
-            onRemove={onRemove}
-            onClaim={onClaim} // ← add
-            claimingIds={claimingIds} // ← add
-          />
-        );
-      case "pending":
-        return (
-          <EligibleTable
-            customers={eligible_customers ?? []}
-            onRemove={onRemove}
-            onClaim={onClaim} // ← add
-            claimingIds={claimingIds}
-          />
-        );
-      case "retained":
-         return (
-          <ReturnedTable
-            customers={returned_customers ?? []}
-            onRemove={onRemove}
-            onClaim={onClaim} // ← add
-            claimingIds={claimingIds}
-          />
-        );
-      case "notFound":
-        return <NotFoundTable accountNumbers={results?.notFound ?? []} />;
-      default: <p>No result found</p>
+  const handleClear = () => {
+    setResults(null);
+    setError(null);
+  };
+
+  // ── Toggle Pending ↔ BD Retained ───────────────────────────────────────────
+  const handleClaim = async (customerId: number) => {
+    setClaimingIds((prev) => new Set(prev).add(customerId));
+
+    const res = await toggleCustomerStatusAction(customerId);
+
+    if (res.success) {
+      // Optimistic local update — no refetch
+      setResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          found: prev.found.map((c) =>
+            c.id === customerId ? { ...c, status: res.newStatus } : c,
+          ),
+        };
+      });
+      toast.success(
+        res.newStatus === "BD Retained"
+          ? "Customer tagged as BD Retained."
+          : "Customer untagged back to Pending.",
+      );
+    } else {
+      toast.error(res.error);
+    }
+
+    setClaimingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(customerId);
+      return next;
+    });
+  };
+
+  // ── UI-only remove (masterlist is not touched) ─────────────────────────────
+  const handleRemove = (customerId: number) => {
+    setResults((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        found: prev.found.filter((c) => c.id !== customerId),
+      };
+    });
+  };
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const pendingCustomers = results?.found.filter((c) => c.status === "Pending") ?? [];
+  const retainedCustomers = results?.found.filter((c) => c.status === "BD Retained") ?? [];
+
+  const viewTabs: { key: ViewTab; label: string; count: number }[] = [
+    { key: "found",    label: "Found",    count: results?.found.length ?? 0 },
+    { key: "notFound", label: "Not Found", count: results?.notFound.length ?? 0 },
+    { key: "pending",  label: "Pending",  count: pendingCustomers.length },
+    { key: "retained", label: "Retained", count: retainedCustomers.length },
+  ];
+
+  const sharedProps = { onRemove: handleRemove, onClaim: handleClaim, claimingIds };
+
+  const renderTable = () => {
+    switch (activeView) {
+      case "found":    return <CustomerTable customers={results?.found ?? []} {...sharedProps} />;
+      case "pending":  return <PendingTable customers={pendingCustomers} {...sharedProps} />;
+      case "retained": return <ReturnedTable customers={retainedCustomers} {...sharedProps} />;
+      case "notFound": return <NotFoundTable accountNumbers={results?.notFound ?? []} />;
     }
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -124,18 +130,16 @@ export default function BatchUpload({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full flex flex-col space-y-3"
     >
+      {/* ── Upload card ── */}
       <div className="w-full rounded-lg bg-white shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]">
-        {/* Header */}
         <div className="bg-teiblue px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-t-lg">
-          <p className="text-white text-lg sm:text-xl font-normal">
-            Batch Upload Checker
-          </p>
+          <p className="text-white text-lg sm:text-xl font-normal">Batch Upload Checker</p>
           <p className="text-white/60 text-xs sm:text-sm font-normal">
             Upload a file to verify accounts
           </p>
         </div>
 
-        {/* Nav Tabs */}
+        {/* Nav tabs */}
         <div className="border-b border-b-gray-200 overflow-x-auto scrollbar-none">
           <ul className="flex flex-row min-w-max">
             {tabs.map((tab) => {
@@ -164,21 +168,19 @@ export default function BatchUpload({
         {/* Dropzone */}
         <div className="w-full px-4 py-4 sm:px-6">
           <div className="w-full sm:w-10/12 md:w-11/12 flex flex-col items-center gap-2 sm:gap-3 mx-auto">
-            <h2 className="text-sm font-semibold text-gray-600 mb-4">
-              Upload File
-            </h2>
+            <h2 className="text-sm font-semibold text-gray-600 mb-2">Upload File</h2>
             <ExcelDropzone
-              onAccountsReady={handleAccountsReady}
-              onClear={clear}
-              loading={loading}
+              onReady={handleReady}
+              onClear={handleClear}
+              loading={isChecking}
             />
           </div>
         </div>
       </div>
 
-      {/* Loading */}
+      {/* ── Checking spinner ── */}
       <AnimatePresence>
-        {loading && (
+        {isChecking && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -186,12 +188,12 @@ export default function BatchUpload({
             className="px-6 py-8 flex items-center justify-center gap-3 text-gray-400"
           >
             <div className="w-4 h-4 border-2 border-teiorange border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm font-medium">Checking accounts…</span>
+            <span className="text-sm font-medium">Checking accounts against masterlist…</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* API error */}
+      {/* ── Error ── */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -206,24 +208,24 @@ export default function BatchUpload({
         )}
       </AnimatePresence>
 
-      {/* Results Panel */}
+      {/* ── Results panel ── */}
       <AnimatePresence>
-        {!loading && results && (
+        {!isChecking && results && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="bg-white rounded-lg shadow-[0_4px_10px_5px_rgb(0,0,0,0.08)]"
           >
-            {/* View Tab Switcher */}
-            <div className="p-3 flex flex-row items-center gap-2 border-b border-gray-100">
+            {/* View tab switcher */}
+            <div className="p-3 flex flex-row flex-wrap items-center gap-2 border-b border-gray-100">
               {viewTabs.map(({ key, label, count }) => {
                 const isActive = activeView === key;
                 return (
                   <button
                     key={key}
                     onClick={() => setActiveView(key)}
-                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? key === "found"
                           ? "bg-teiblue text-white shadow-sm"
@@ -233,10 +235,8 @@ export default function BatchUpload({
                   >
                     {label}
                     <span
-                      className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-semibold transition-colors ${
-                        isActive
-                          ? "bg-white/25 text-white"
-                          : "bg-gray-300 text-gray-600"
+                      className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-semibold ${
+                        isActive ? "bg-white/25 text-white" : "bg-gray-300 text-gray-600"
                       }`}
                     >
                       {count}
@@ -255,7 +255,7 @@ export default function BatchUpload({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
               >
-                {view_table(activeView)}
+                {renderTable()}
               </motion.div>
             </AnimatePresence>
           </motion.div>

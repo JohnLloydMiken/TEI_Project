@@ -1,4 +1,4 @@
-// components/dashboard/eligibility-checker/batch/retained-table.tsx
+// components/dashboard/eligibility-checker/batch/pending-table.tsx
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckedCustomer } from "@/lib/actions/batch";
@@ -160,8 +160,7 @@ function ConfirmModal({
   );
 }
 
-
-export default function ReturnedTable({ customers, onRemove, onClaim, claimingIds }: BatchList) {
+export default function Pending({ customers, onRemove, onClaim, claimingIds }: BatchList) {
   const [pendingClaim, setPendingClaim] = useState<PendingClaim | null>(null);
 
   function requestClaim(c: CheckedCustomer) {
@@ -172,14 +171,6 @@ export default function ReturnedTable({ customers, onRemove, onClaim, claimingId
     if (!pendingClaim) return;
     onClaim(pendingClaim.id);
     setPendingClaim(null);
-  }
-
-  if (customers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-        <p className="text-sm">No unmatched accounts</p>
-      </div>
-    );
   }
 
   return (

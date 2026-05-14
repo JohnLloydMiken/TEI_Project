@@ -13,7 +13,7 @@ model Customer {
   accountCode  String
   accountNo    String
   customerName String
-  status       String  @default("Pending")
+  status       String  @default("Pending")   //Pending or BD Retained
 
   address       String?
   email         String?

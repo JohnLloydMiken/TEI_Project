@@ -22,21 +22,21 @@ export default async function OverviewWidgets() {
   ];
 
   return (
-    <div className="w-full grid grid-col-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-10">
+    <div className="w-full grid grid-cols-2 md:grid-cols-2 lg:flex lg:flex-row lg:justify-between lg:items-stretch gap-2 md:gap-10">
       {widgets.map(({ label, value, Icon }) => (
         <div
           key={label}
-          className="relative flex-1 space-x-6 shadow shadow-sm hover:shadow-lg rounded-lg flex bg-white items-center justify-center min-h-30"
+          className="relative flex-1 space-x-2 md:space-x-6  shadow-sm hover:shadow-lg rounded-lg flex bg-white items-center justify-center min-h-30"
         >
           <div className="flex flex-row items-center justify-center rounded-xl">
             <Icon color="#1a3a5c" size={44} strokeWidth={1.5} />
           </div>
           <div className="flex flex-row justify-between items-center">
             <div className="space-y-3 flex flex-col justify-center items-center">
-              <p className="text-sm text-gray-400 font-light whitespace-nowrap">
+              <p className="md:text-sm text-xs text-gray-400 font-light whitespace-nowrap">
                 {label}:
               </p>
-              <h1 className="text-2xl text-teiblue font-medium leading-none">
+              <h1 className="lg:text-2xl text-xl text-teiblue font-medium leading-none">
                 {value}
               </h1>
             </div>

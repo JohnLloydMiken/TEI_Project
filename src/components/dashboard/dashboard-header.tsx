@@ -8,10 +8,10 @@ export default function DashboardHeader({ name, role }: DashboardHeaderProps) {
 
   const pathname = usePathname();
   const cleanPath = pathname.replace(/^\/+/, "");
-  const path =
-    cleanPath === "individual-checker" || cleanPath === "batch-checker/paste"
-      ? "Checker"
-      : "Reports";
+
+  const path = cleanPath.startsWith("dashboard/") ? cleanPath.slice(10) : cleanPath
+ 
+
 
   const getInitials = (name: string) => {
     const parts = name.trim().split(" ").filter(Boolean);
@@ -29,9 +29,9 @@ export default function DashboardHeader({ name, role }: DashboardHeaderProps) {
       <div className="w-full px-6 py-2 flex flex-row md:justify-between justify-end items-center">
         <p className=" text-xs md:block hidden uppercase text-gray-400 font-normal">
           Dashboards {""} {">"} {""}
-          {path} {""} {">"} {""}
+           {""}  {""}
           <span className="text-sm text-tei-blue-mid font-semibold">
-            {cleanPath}
+            {path}
           </span>
         </p>
         <div className="flex flex-row items-center gap-2 border border-gray-200 bg-[#f0f4f9] p-2 w-2/5 lg:w-[12%] rounded-full">

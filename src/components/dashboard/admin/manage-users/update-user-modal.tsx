@@ -1,41 +1,36 @@
 "use client";
+
 import { motion, AnimatePresence } from "motion/react";
-import { X, Eye, EyeOff, UserRoundPlus } from "lucide-react";
-import { useState } from "react";
-import bcrypt from "bcryptjs";
-interface CreateUserModalProps {
+import { X, UserRoundPen } from "lucide-react";
+import { useState, useEffect } from "react";
+import { updateUserDetails } from "@/lib/actions/CSD-user-actions";
+import { CSDUser } from "./manage-users-client";
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: { fullName: string; email: string; password: string }) => void;
-  user: User | null
+  user: CSDUser | null;
 }
 
-interface User{
-    name: string,
-    email: string,
-    password: string
-}
-
-export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: CreateUserModalProps) {
-  const [fullName, setFullName] = useState(user?.name);
-  const [email, setEmail] = useState(user?.email);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+export default function UpdateUserModal({ isOpen, onClose, user }: Props) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  
+  // Sync fields when the target user changes
+  useEffect(() => {
+    if (user) { setName(user.name); setEmail(user.email); setError(null); }
+  }, [user]);
+
   const handleSubmit = async () => {
-    if (!fullName || !email || !password) return;
+    if (!user || !name || !email) return;
     setIsLoading(true);
-    try {
-      await onSubmit?.({ fullName, email, password });
-      setFullName("");
-      setEmail("");
-      setPassword("");
-      onClose();
-    } finally {
-      setIsLoading(false);
-    }
+    setError(null);
+    const result = await updateUserDetails({ id: user.id, name, email });
+    setIsLoading(false);
+    if (result.error) { setError(result.error); return; }
+    onClose();
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -45,16 +40,12 @@ export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: Cre
   return (
     <AnimatePresence>
       {isOpen && (
-        // Backdrop
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={handleBackdropClick}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
         >
-          {/* Modal Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -62,17 +53,14 @@ export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: Cre
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden"
           >
-            {/* Top accent bar */}
             <div className="h-1 w-full bg-linear-to-r from-tei-blue via-tei-blue to-tei-orange-lt" />
-
             <div className="p-6">
-              {/* Header */}
               <div className="flex items-start justify-between mb-1">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-tei-blue/10">
-                    <UserRoundPlus size={18} className="text-tei-blue" />
+                    <UserRoundPen size={18} className="text-tei-blue" />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-800">Update CSD user</h2>
+                  <h2 className="text-lg font-bold text-gray-800">Update User Info</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -81,61 +69,38 @@ export default function UpdateUserModal({ isOpen, onClose, onSubmit, user }: Cre
                   <X size={18} />
                 </button>
               </div>
-              <p className="text-sm text-gray-400 mb-6 ml-12">
-                Change User Information.
-              </p>
+              <p className="text-sm text-gray-400 mb-6 ml-12">Update name and email address.</p>
 
-              {/* Form */}
               <div className="flex flex-col gap-4">
-                {/* Full Name */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-gray-700">Full Name</label>
                   <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder= {user?.name}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder-gray-300 outline-none focus:border-tei-blue focus:ring-2 focus:ring-tei-blue/10 transition-all"
+                    type="text" value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:border-tei-blue focus:ring-2 focus:ring-tei-blue/10 transition-all"
                   />
                 </div>
-
-                {/* Company Email */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-gray-700">Company Email</label>
                   <input
-                    type="email"
-                    value={email}
+                    type="email" value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={user?.email}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder-gray-300 outline-none focus:border-tei-blue focus:ring-2 focus:ring-tei-blue/10 transition-all"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:border-tei-blue focus:ring-2 focus:ring-tei-blue/10 transition-all"
                   />
                 </div>
-
-            
-
-               
-
+                {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-3 mt-6">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   onClick={onClose}
                   className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                >Cancel</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   onClick={handleSubmit}
-                  disabled={!fullName || !email || !password || isLoading}
+                  disabled={!name || !email || isLoading}
                   className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-tei-blue hover:bg-tei-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
-                >
-                  {isLoading ? "Creating..." : "Update User"}
-                </motion.button>
+                >{isLoading ? "Saving..." : "Save Changes"}</motion.button>
               </div>
             </div>
           </motion.div>
