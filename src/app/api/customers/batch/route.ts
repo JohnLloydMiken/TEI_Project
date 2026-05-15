@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     // Single DB round-trip for all accounts
     const customers = await prisma.customer.findMany({
       where: { accountNo: { in: cleaned } },
+      orderBy: {batchId: "desc"},
       select: {
         id:               true,
         accountNo:        true,

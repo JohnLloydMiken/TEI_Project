@@ -17,8 +17,9 @@ export async function GET(
   }
 
   try {
-    const customer = await prisma.customer.findFirst({
+     const customer = await prisma.customer.findFirst({
       where: { accountNo: accountNumber },
+      orderBy:{ batchId: "desc"},
       select: {
         id: true,
         accountNo: true,
@@ -34,7 +35,6 @@ export async function GET(
         },
       },
     });
-
     if (!customer) {
       return NextResponse.json(
         { error: "Customer not found" },

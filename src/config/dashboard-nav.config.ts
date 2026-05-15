@@ -32,7 +32,7 @@ export const adminNav = [
     content: [
       
       {
-        label: "Returned List",
+        label: "Customer List",
         href: "/reports/returned-list",
         Icon: "file-text",
       },
@@ -77,7 +77,7 @@ export const csdNav = [
     title: "Reports",
     content: [
       {
-        label: "Returned List",
+        label: "Customer List",
         href: "/reports/returned-list",
         Icon: "file-text",
       },
