@@ -116,5 +116,5 @@ export const getCustomerCounts = unstable_cache(
     return { total, bdRetained, pending };
   },
   ["customer-counts"],
-  { revalidate: 60, tags: ["customers-list"] }
+  { revalidate: 60, tags: ["customers-counts"] }
 );

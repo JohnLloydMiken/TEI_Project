@@ -83,7 +83,7 @@ export async function toggleCustomerStatusAction(
     if (!customer) return { success: false, error: "Customer not found." };
 
     const fromStatus = customer.status;
- 
+
     const toStatus = fromStatus === "Pending" ? "BD Retained" : "Pending";
     const action = toStatus === "BD Retained" ? "TAGGED" : "UNTAGGED";
 
@@ -103,7 +103,11 @@ export async function toggleCustomerStatusAction(
       }),
     ]);
     revalidateTag("historical-data", "default");
-    revalidatePath("/batch-checker/upload");
+    revalidateTag("customer-counts", "default");
+    revalidatePath("/batch-checker/upload"); // batch upload page
+    revalidatePath("/batch-checker/paste"); // batch upload page
+    revalidatePath("/individual-checker"); // individual checker page — add this
+    revalidatePath("/"); // root if your widgets render there
     return { success: true, newStatus: toStatus };
   } catch (err) {
     console.error("[toggleCustomerStatusAction]", err);
@@ -113,4 +117,49 @@ export async function toggleCustomerStatusAction(
 
 export async function bustHistoricalCache() {
   revalidateTag("historical-data", "default");
+}
+
+// In your batch.ts actions file
+
+export async function checkSingleAccountAction(
+  accountNo: string,
+): Promise<
+  | { success: true; customer: CheckedCustomer }
+  | { success: false; error: string }
+> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return { success: false, error: "Unauthenticated" };
+
+  const trimmed = accountNo.trim();
+  if (!trimmed) return { success: false, error: "Account number is required." };
+
+  try {
+    const customer = await prisma.customer.findFirst({
+      where: { accountNo: trimmed },
+      orderBy: { batchId: "desc" }, // ← preserve existing behavior
+      select: {
+        id: true,
+        accountNo: true,
+        accountCode: true,
+        customerName: true,
+        status: true,
+        batchId: true,
+        batch: {
+          select: { month: true, year: true, fileName: true },
+        },
+      },
+    });
+
+    if (!customer) return { success: false, error: "Customer not found." };
+    revalidateTag("historical-data", "default");
+    revalidateTag("customer-counts", "default");
+    revalidatePath("/batch-checker/upload"); // batch upload page
+    revalidatePath("/batch-checker/paste"); // batch upload page
+    revalidatePath("/individual-checker"); // individual checker page — add this
+    revalidatePath("/");
+    return { success: true, customer };
+  } catch (err) {
+    console.error("[checkSingleAccountAction]", err);
+    return { success: false, error: "Failed to look up account." };
+  }
 }
