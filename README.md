@@ -3,17 +3,34 @@
 > An internal web application for Tarlac Electric Inc. (TEI) that manages and tracks customer bill deposit refund eligibility. Customer Service Department (CSD) staff can verify individual or bulk account eligibility, and administrators can upload and manage qualified customer lists.
 
 ---
-# Screenshots
- 
+
+## Screenshots
+
 > _Add screenshots or a short demo GIF here to help new team members quickly understand the UI before setting up the project locally._
- 
-| Login Page | CSD Dashboard | Admin Upload |
+
+### CSD Views
+| Login | Dashboard Overview | Individual Checker |
 |---|---|---|
-| ![Login](docs/screenshots/Login.png) | ![Dashboard Overview](docs/screenshots/Overview.png) | ![Individual Checker](docs/screenshots/Individual-Checker.png) | ![Batch-Paste Checker](docs/screenshots/Batch-Paste-Checker.png) | ![Batch-Upload Checker](docs/screenshots/Batch-Upload-Checker.png) | ![Confirmation Modal](docs/screenshots/Customer-Action.png) | ![Customer List](docs/screenshots/Customer-List-All.png) | ![Export Data](docs/screenshots/Export-Data.png) | ![ADMIN: Manage User](docs/screenshots/Manage-User.png) | ![Batch-Upload Checker](docs/screenshots/User-Modal.png) | ![ADMIN: Upload Excel](docs/screenshots/Upload-MastertList.png)
- 
+| ![Login](docs/screenshots/Login.png) | ![Dashboard Overview](docs/screenshots/Overview.png) | ![Individual Checker](docs/screenshots/Individual-Checker.png) |
+
+| Batch (Paste) | Batch (Upload) | Confirmation Modal |
+|---|---|---|
+| ![Batch-Paste Checker](docs/screenshots/Batch-Paste-Checker.png) | ![Batch-Upload Checker](docs/screenshots/Batch-Upload-Checker.png) | ![Confirmation Modal](docs/screenshots/Customer-Action.png) |
+
+| Customer List | Export Data |
+|---|---|
+| ![Customer List](docs/screenshots/Customer-List-All.png) | ![Export Data](docs/screenshots/Export-Data.png) |
+
+### Admin Views
+| Manage Users | User Modal | Upload Master List |
+|---|---|---|
+| ![Manage Users](docs/screenshots/Manage-User.png) | ![User Modal](docs/screenshots/User-Modal.png) | ![Upload Master List](docs/screenshots/Upload-MastertList.png) |
+
 > **Tip:** Place your images in a `docs/screenshots/` folder at the project root. Tools like [ScreenToGif](https://www.screentogif.com/) (Windows) or [Kap](https://getkap.co/) (Mac) are great for recording demo GIFs.
- 
+
 ---
+
+
 ## Table of Contents
 - [Screenshots](#screenshots)
 - [Overview](#overview)
