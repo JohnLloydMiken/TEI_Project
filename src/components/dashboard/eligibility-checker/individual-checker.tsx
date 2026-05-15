@@ -5,44 +5,81 @@ import { Search } from "lucide-react";
 import { motion } from "motion/react";
 import CustomerCard from "./customer-card";
 import { useState, useEffect } from "react";
-import useFetchQualifiedUsers from "@/services/useFetchQulifiedUsers";
 import { toast } from "sonner";
-import useMarkAsClaimed from "@/services/useMarkeAsClaimed";
+import {
+  CheckedCustomer,
+  checkSingleAccountAction,
+  toggleCustomerStatusAction,
+} from "@/lib/actions/batch";
+
 export default function IndividualChecker() {
   const pathname = usePathname();
-  const individualPath = "/individual-checker";
-  const batchPastePath = "/batch-checker/paste";
-  const batchUploadPath = "/batch-checker/upload";
   const [accountNo, setAccountNo] = useState("");
-  const [query, setQuery] = useState(""); // ✅ only fetch on button click
-  const { customer, loading, error } = useFetchQualifiedUsers(query);
-  const { markAsClaimed, claimingIds } = useMarkAsClaimed();
+  const [customer, setCustomer] = useState<CheckedCustomer | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [claimingIds, setClaimingIds] = useState<Set<number>>(new Set());
 
-  async function handleClaim() {
-    if (!customer?.id || !customer?.accountNo) return;
-    await markAsClaimed(customer.id, customer.accountNo, () => {
-      // Re-fetch to get updated status from DB
-      setQuery("");
-      setTimeout(() => setQuery(accountNo.trim()), 100);
-    });
-  }
   const tabs = [
-    { label: "Individual", href: individualPath },
-    { label: "Batch (paste)", href: batchPastePath },
-    { label: "Batch (upload)", href: batchUploadPath },
+    { label: "Individual", href: "/individual-checker" },
+    { label: "Batch (paste)", href: "/batch-checker/paste" },
+    { label: "Batch (upload)", href: "/batch-checker/upload" },
   ];
-
-  function handleCheck() {
-    setQuery(accountNo.trim()); // ✅ triggers the useEffect in the hook
-  }
-  function handleClear() {
-    setAccountNo("");
-    setQuery("");
-  }
 
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
+
+  async function handleCheck() {
+    const trimmed = accountNo.trim();
+    if (!trimmed) return;
+
+    setLoading(true);
+    setError(null);
+    setCustomer(null);
+
+    const res = await checkSingleAccountAction(trimmed);
+
+    if (res.success) {
+      setCustomer(res.customer);
+    } else {
+      setError(res.error);
+    }
+
+    setLoading(false);
+  }
+
+  async function handleClaim() {
+    if (!customer?.id) return;
+
+    setClaimingIds((prev) => new Set(prev).add(customer.id));
+
+    const res = await toggleCustomerStatusAction(customer.id);
+
+    if (res.success) {
+      setCustomer((prev) => (prev ? { ...prev, status: res.newStatus } : prev));
+      toast.success(
+        res.newStatus === "BD Retained"
+          ? "Customer tagged as BD Retained."
+          : "Customer untagged back to Pending.",
+      );
+    } else {
+      toast.error(res.error);
+    }
+
+    setClaimingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(customer.id);
+      return next;
+    });
+  }
+
+  function handleClear() {
+    setAccountNo("");
+    setCustomer(null);
+    setError(null);
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -98,34 +135,35 @@ export default function IndividualChecker() {
           type="text"
           value={accountNo}
           onChange={(e) => setAccountNo(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCheck()}
           placeholder="Enter Account Number (e.g. 906-2370-000)"
           className="w-full h-12 pl-14 pr-36 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 outline-none focus:ring-2 focus:ring-gray-300/50 focus:border-gray-300 transition-all text-lg"
         />
         <button
-          className="absolute right-2 top-2 bottom-2 px-8 bg-[#1a3a5c] text-white font-bold rounded-xl hover:bg-[#244a75] transition-all active:scale-95 shadow-lg shadow-[#1a3a5c]/20"
           onClick={handleCheck}
+          disabled={loading}
+          className="absolute right-2 top-2 bottom-2 px-8 bg-[#1a3a5c] text-white font-bold rounded-xl hover:bg-[#244a75] transition-all active:scale-95 shadow-lg shadow-[#1a3a5c]/20 disabled:opacity-60"
         >
-          Verify
+          {loading ? "Checking..." : "Verify"}
         </button>
       </div>
 
-      {/* Results placeholder */}
-      <div className="p-4 flex flex-col justify-center items-center ">
+      {/* Results */}
+      <div className="p-4 flex flex-col justify-center items-center">
         <hr className="border-gray-200" />
-
         {!customer ? (
           <p className="text-center text-xs sm:text-sm uppercase text-gray-400 tracking-wider">
             Your results are here
           </p>
         ) : (
           <CustomerCard
-            accountName={customer?.customerName}
-            accountNumber={customer?.accountNo}
+            accountName={customer.customerName}
+            accountNumber={customer.accountNo}
             accountCode={customer.accountCode}
-            status={customer?.status ?? null}
+            status={customer.status ?? null}
             onClear={handleClear}
-            onClaim={handleClaim} // ← new
-            claiming={customer?.id ? claimingIds.has(customer.id) : false} // ← new
+            onClaim={handleClaim}
+            claiming={claimingIds.has(customer.id)}
           />
         )}
       </div>
