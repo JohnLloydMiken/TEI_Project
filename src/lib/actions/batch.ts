@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 export type CheckedCustomer = {
   id: number;
@@ -27,7 +28,9 @@ export type CheckResult = {
  */
 export async function checkBatchAccountsAction(
   accountNos: string[],
-): Promise<{ success: true; result: CheckResult } | { success: false; error: string }> {
+): Promise<
+  { success: true; result: CheckResult } | { success: false; error: string }
+> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { success: false, error: "Unauthenticated" };
 
@@ -65,19 +68,22 @@ export async function checkBatchAccountsAction(
  */
 export async function toggleCustomerStatusAction(
   customerId: number,
-): Promise<{ success: true; newStatus: string } | { success: false; error: string }> {
+): Promise<
+  { success: true; newStatus: string } | { success: false; error: string }
+> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { success: false, error: "Unauthenticated" };
 
   try {
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, accountNo: true },
     });
 
     if (!customer) return { success: false, error: "Customer not found." };
 
     const fromStatus = customer.status;
+ 
     const toStatus = fromStatus === "Pending" ? "BD Retained" : "Pending";
     const action = toStatus === "BD Retained" ? "TAGGED" : "UNTAGGED";
 
@@ -96,11 +102,15 @@ export async function toggleCustomerStatusAction(
         },
       }),
     ]);
-
+    revalidateTag("historical-data", "default");
     revalidatePath("/batch-checker/upload");
     return { success: true, newStatus: toStatus };
   } catch (err) {
     console.error("[toggleCustomerStatusAction]", err);
     return { success: false, error: "Failed to update status." };
   }
+}
+
+export async function bustHistoricalCache() {
+  revalidateTag("historical-data", "default");
 }

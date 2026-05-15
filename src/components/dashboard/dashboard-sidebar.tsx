@@ -18,7 +18,7 @@
 import type { IconKey } from "@/types/dashboard/dashboard-types";
 import { Dancing_Script } from "next/font/google";
 import { Playwrite_NO } from "next/font/google";
-
+import Image from "next/image";
  export const ICON_MAP: Record<IconKey, React.ElementType> = {
   "search":     Search,
   "file-text":  FileText,
@@ -50,7 +50,7 @@ import { Playwrite_NO } from "next/font/google";
           className="px-6 py-4  border-b border-white/20 flex items-center justify-between z-50 overflow-hidden "
         >
           <div>
-            <h1 className={`font-[PlaywriteNorge] text-4xl outline-none font-bold text-teiorange`}>tei.</h1>
+            <Image src={"/tei-logo-clear.png"} alt="TEI LOGO" width={50} height={50}/>
             <p className="text-white font-medium text-2xl tracking-normal">
               BDR System
             </p>

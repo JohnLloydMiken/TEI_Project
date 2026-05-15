@@ -20,7 +20,7 @@ export default function OverviewPage() {
           </Suspense>
         </div>
 
-        <div className="flex-1 flex flex-col gap-3 min-w-0">
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
           <Suspense fallback={<DashboardSkeleton />}>
             <RetentionChart />
           </Suspense>

@@ -2,9 +2,9 @@
 "use client";
 
 import { Bold } from "lucide-react";
-import { Pie, PieChart, PieLabelRenderProps, Sector, ResponsiveContainer } from "recharts";
+import { Pie, PieChart, PieLabelRenderProps, Sector, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
-const COLORS = ["#3B7597", "#093C5D"]; // [BD Retained (Sky), Pending (Amber)]
+const COLORS = ["#778088 ", "#093C5D"]; // [BD Retained (Sky), Pending (Amber)]
 
 
 
@@ -52,7 +52,7 @@ export default function CustomerPieChart({ bdRetainedCount, pendingCount }: Prop
   ];
 
   return (
-    <div className="w-full h-75 flex justify-center">
+    <div className="w-full h-64 flex justify-center">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart >
           <Pie
@@ -74,7 +74,20 @@ export default function CustomerPieChart({ bdRetainedCount, pendingCount }: Prop
               />
             )}
           />
+          <Tooltip
+            cursor={{ fill: '#f1f5f9' }}
+            contentStyle={{
+              backgroundColor: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+              fontSize: "12px",
+            }}
+            labelStyle={{ color: "#1a3a5c", fontWeight: 700, marginBottom: '4px' }}
+          />
+    
         </PieChart>
+          
       </ResponsiveContainer>
     </div>
   );

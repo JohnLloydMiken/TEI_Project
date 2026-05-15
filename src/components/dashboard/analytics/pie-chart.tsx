@@ -10,7 +10,7 @@ export default async function CustomerPieSection() {
     ]);
 
   return (
-    <div className="flex-1 bg-white rounded-lg  shadow-sm hover:shadow-lg p-3">
+    <div className="flex-1 bg-white rounded-lg   shadow-sm hover:shadow-lg p-3">
       <h1 className="text-xl text-teiblue font-medium">
         Eligible Customer Status:
       </h1>
@@ -22,11 +22,11 @@ export default async function CustomerPieSection() {
       </div>
       <div className="w-full mx-auto flex justify-center items-center space-x-6">
         <div className="flex justify-center items-center space-x-2">
-          <div className="w-2 h-2  bg-yellow-100 border border-yellow-400"/>
+          <div className="w-2 h-2  bg-[#093C5D]"/>
           <p className="text-sm font-normal text-teiblue"> - Pending</p>
         </div>
         <div className="flex justify-center items-center space-x-2">
-          <div className="w-2 h-2  bg-blue-100 border border-blue-400"/>
+          <div className="w-2 h-2  bg-[#778088] "/>
           <p className="text-sm font-normal text-teiblue"> - BD Retained</p>
         </div>
       </div>
